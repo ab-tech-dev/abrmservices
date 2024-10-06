@@ -151,6 +151,7 @@ class ManageListingView(APIView):
             data = request.data
             data = self.retrieve_values(data)
 
+
             title = data.get('title')
             slug = data.get('slug')
 

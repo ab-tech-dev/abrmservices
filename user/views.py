@@ -2,10 +2,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from django.contrib.auth import get_user_model
+from rest_framework.exceptions import APIException
 User = get_user_model()
 from .serializers import UserSerializer
+from django.shortcuts import render
 
 
+
+def listings(request):
+    return render(request, 'index.html')
 
 
 # Import statements...
@@ -19,6 +24,7 @@ class RegisterView(APIView):
 
             name = data.get('name')
             email = data.get('email')
+            email = email.lower()
             password = data.get('password')
             re_password = data.get('re_password')
             is_realtor = data.get('is_realtor') 
@@ -66,14 +72,6 @@ class RegisterView(APIView):
                 {'error' : f'Something went wrong when registering an account: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-        
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.exceptions import APIException
-from .serializers import UserSerializer  # Import your UserSerializer here
 
 class RetrieveUserView(APIView):
     def get(self, request, format=None):

@@ -16,7 +16,8 @@ urlpatterns = [
     path('api/token/verify/', TokenVerifyView.as_view()),
     path('api/abrmservices/', include('abrmservices.urls')),
     path('admin/', admin.site.urls),
-    path('', include('abrmservices.urls'))
+    path('', include('abrmservices.urls')),
+    path('', include('user.urls'))
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
