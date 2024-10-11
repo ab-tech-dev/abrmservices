@@ -1,0 +1,967 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Realestate - Choose your dream home</title>
+  <!--======== custom css link =========-->
+  <link rel="stylesheet" href="{% static 'css/beau.css'%}">
+  <!--========= google font link ========-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    
+   <header class="header" data-header>
+        <div class="container">
+            <a href="" class="logo">
+                <ion-icon name="home-outline"></ion-icon> Realestate
+            </a>
+
+            <nav class="navbar container" data-navbar>
+                <ul class="navbar-list">
+                    <li>
+                        <a href="#" class="navbar-link" data-nav-link>Home</a>
+                    </li>
+                    <li>
+                        <a href="#" class="navbar-link" data-nav-link>About Us</a>
+                    </li>
+                    <li>
+                        <a href="#" class="navbar-link" data-nav-link>Services</a>
+                    </li>
+                    <li>
+                        <a href="#" class="navbar-link" data-nav-link>Contact</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <a href="#" class="btn btn-secondary">Signup</a>
+            <button class="nav-toggle-btn" aria-label="Toggle menu" data-nav-toggler>
+                <ion-icon name="menu-outline" aria-hidden="true" class="menu-icon"></ion-icon>
+                <ion-icon name="close-outline" aria-hidden="trur" class="close-icon"></ion-icon>
+
+            </button>
+        </div>
+   </header>
+
+   <!--======== main =========-->
+   <main>
+        <article class="article">
+            <section class="section hero" aria-label="hero">
+                <div class="container">
+                    <div class="hero-bg">
+                        <div class="hero-content">
+                            <h1 class="h1 hero-title">
+                                We will help you find your <span class="span">Dream</span> home
+                            </h1>
+
+                            <p class="hero-text">
+                                Buy your dream home today without any agent or commissions
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="hero-form-wrapper">
+                        <div class="form-tab">
+                            <button type="button" class="tab-btn" id="buy-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Buy</button>
+                            <button type="button" class="tab-btn" id="sell-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Sell</button>
+                            <button type="button" class="tab-btn" id="rent-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Rent</button>
+                        </div>
+                        
+                        <!-- Search Form -->
+                        <form method="post" class="hero-form" id="search-form" style="display: none;">
+                            {% csrf_token %}
+                            <input type="hidden" name="sale_type" id="sale_type" value="">
+                        
+                            <div class="input-wrapper">
+                                {{ form.search.label_tag }}
+                                {{ form.search }}
+                                <ion-icon name="search-outline"></ion-icon>
+                            </div>
+                        
+                            <div class="input-wrapper">
+                                {{ form.location.label_tag }}
+                                {{ form.location }}
+                            </div>
+                        
+                            <div class="input-wrapper">
+                                {{ form.category.label_tag }}
+                                {{ form.category }}
+                            </div>
+                        
+                            <div class="input-wrapper">
+                                {{ form.min_price.label_tag }}
+                                {{ form.min_price }}
+                            </div>
+                        
+                            <div class="input-wrapper">
+                                {{ form.max_price.label_tag }}
+                                {{ form.max_price }}
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Search</button>
+                        </form>
+
+                                                <!-- Your Django Template -->
+                        <!-- Updated Django Template using 'cform' with inline styles -->
+                        <div id="realtor-form" class="property-card" style="display: none; margin: auto; padding: 2rem; justify-content: space-between; gap: 5rem;">
+                            <div class="form-container">
+                                <h2>Create Listing</h2>
+                                <br>
+                                <br>
+                                <form method="POST" enctype="multipart/form-data">
+                                    {% csrf_token %}
+
+                                    <!-- Realtor Email Field -->
+                                    <div style="display: flex; gap: 2rem;">
+                                        <div class="row-container">
+                                            <label for="{{ cform.realtor.id_for_label }}">Realtor Email:</label>
+                                            {{ cform.realtor }}
+                                        </div>
+                                        <div class="row-container">
+                                            <label for="{{ cform.title.id_for_label }}">Title:</label>
+                                            {{ cform.title }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Slug and Location Fields -->
+                                    <div style="display: flex; gap: 2rem;">
+                                        <div class="row-container">
+                                            <label for="{{ cform.slug.id_for_label }}">Slug:</label>
+                                            {{ cform.slug }}
+                                        </div>
+                                        <div class="row-container">
+                                            <label for="{{ cform.location.id_for_label }}">Location:</label>
+                                            {{ cform.location }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Zip Code and Description Fields -->
+                                    <div style="display: flex; gap: 2rem;">
+                                        <div class="row-container">
+                                            <label for="{{ cform.zipcode.id_for_label }}">Zip Code:</label>
+                                            {{ cform.zipcode }}
+                                        </div>
+                                        <div class="row-container">
+                                            <label for="{{ cform.description.id_for_label }}">Description:</label>
+                                            {{ cform.description }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Price and Bedrooms Fields -->
+                                    <div style="display: flex; gap: 2rem;">
+                                        <div class="row-container">
+                                            <label for="{{ cform.price.id_for_label }}">Price:</label>
+                                            {{ cform.price }}
+                                        </div>
+                                        <div class="row-container">
+                                            <label for="{{ cform.bedrooms.id_for_label }}">Bedrooms:</label>
+                                            {{ cform.bedrooms }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Bathrooms and Sale Type Fields -->
+                                    <div style="display: flex; gap: 2rem;">
+                                        <div class="row-container">
+                                            <label for="{{ cform.bathrooms.id_for_label }}">Bathrooms:</label>
+                                            {{ cform.bathrooms }}
+                                        </div>
+                                        <div class="row-container">
+                                            <label for="{{ cform.sale_type.id_for_label }}">Sale Type:</label>
+                                            {{ cform.sale_type }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Home Type Field -->
+                                    <div class="row-container">
+                                        <label for="{{ cform.home_type.id_for_label }}">Home Type:</label>
+                                        {{ cform.home_type }}
+                                    </div>
+
+                                    <!-- Main Photo and Additional Photos Fields -->
+                                    <div class="row-container">
+                                        <label for="{{ cform.main_photo.id_for_label }}">Main Photo:</label>
+                                        {{ cform.main_photo }}
+                                    </div>
+                                    <div class="row-container">
+                                        <label for="{{ cform.photo_1.id_for_label }}">Photo 1:</label>
+                                        {{ cform.photo_1 }}
+                                    </div>
+                                    <div class="row-container">
+                                        <label for="{{ cform.photo_2.id_for_label }}">Photo 2:</label>
+                                        {{ cform.photo_2 }}
+                                    </div>
+                                    <div class="row-container">
+                                        <label for="{{ cform.photo_3.id_for_label }}">Photo 3:</label>
+                                        {{ cform.photo_3 }}
+                                    </div>
+
+                                    <!-- Is Published and Date Created Fields -->
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <div class="row-container" style="left: 0; display: flex;">
+                                            <label for="{{ cform.is_published.id_for_label }}">Is Published?</label>
+                                            {{ cform.is_published }}
+                                        </div>
+                                        <div class="row-container" style="right: 0;">
+                                            <label for="{{ cform.date_created.id_for_label }}">Date Created:</label>
+                                            {{ cform.date_created }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit Button -->
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                </form>
+                            </div>
+                        </div>
+
+
+
+                        <!-- Login/Signup Form -->
+                        <div id="login-form" style="display: none;">
+                            <h2>Login/Signup Form</h2>
+                            <!-- Your login/signup form fields here -->
+                        </div>
+
+                        
+                        <script>
+                            document.getElementById('buy-btn').addEventListener('click', function() {
+                                document.getElementById('sale_type').value = 'For Sale';
+                                document.getElementById('search-form').style.display = 'flex';
+                                document.getElementById('login-form').style.display = 'none';
+                                document.getElementById('realtor-form').style.display = 'none';
+                                document.getElementById('buy-btn').style.color = 'white';
+                                document.getElementById('sell-btn').style.color = 'black';
+                                document.getElementById('rent-btn').style.color = 'black';
+                                document.getElementById('buy-btn').style.background = '#007BFF';
+                                document.getElementById('sell-btn').style.background = 'none';
+                                document.getElementById('rent-btn').style.background = 'none';
+                            });
+                        
+                            document.getElementById('rent-btn').addEventListener('click', function() {
+                                document.getElementById('sale_type').value = 'For Rent';
+                                document.getElementById('search-form').style.display = 'flex';
+                                document.getElementById('login-form').style.display = 'none';
+                                document.getElementById('realtor-form').style.display = 'none'; 
+                                document.getElementById('buy-btn').style.color = 'black';
+                                document.getElementById('sell-btn').style.color = 'black';
+                                document.getElementById('rent-btn').style.color = 'white';
+                                document.getElementById('buy-btn').style.background = 'none';
+                                document.getElementById('sell-btn').style.background = 'none';
+                                document.getElementById('rent-btn').style.background = '#007BFF';
+                            });
+                        
+                            document.getElementById('sell-btn').addEventListener('click', function() {
+                                // Redirect based on login status
+                                var user = true;
+                                document.getElementById('buy-btn').style.color = 'black';
+                                document.getElementById('sell-btn').style.color = 'white';
+                                document.getElementById('rent-btn').style.color = 'black';
+                                document.getElementById('buy-btn').style.background = 'none';
+                                document.getElementById('sell-btn').style.background = '#007BFF';
+                                document.getElementById('rent-btn').style.background = 'none';
+
+                                if (user.is_authenticated) {
+                                    document.getElementById('realtor-form').style.display = 'block';
+                                    document.getElementById('realtor-form').style.position = 'absolute';
+                                    document.getElementById('login-form').style.display = 'none';
+                                    document.getElementById('search-form').style.display = 'none';  // Adjust this as needed
+                                } else {
+                                    document.getElementById('login-form').style.display = 'block';
+                                    document.getElementById('login-form').style.position = 'absolute';
+                                    document.getElementById('realtor-form').style.position = 'absolute';
+                                    document.getElementById('realtor-form').style.zIndex = 2;
+                                    document.getElementById('realtor-form').style.background = 'white';
+                                    document.getElementById('realtor-form').style.display = 'block';
+                                    document.getElementById('search-form').style.display = 'none';  // Change this if necessary
+                                };
+                            });
+
+                        </script>
+                        
+                        
+                    </div>
+                </div>
+            </section>
+                {% if listings %}
+                    <h2 style="margin: 1.5% 5%;">Search Results:</h2>
+                    <div class="property-list" style="padding: 0 5%;  margin-bottom: 2%;">
+                        {% for listing in listings %}
+                            <div class="property-card">
+                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
+                                    <img src="{{ listing.main_photo.url }}" width="800px" height="533" loading="lazy" alt="{{ listing.title }}" class="img-cover">
+                                </figure>
+                            
+                                <button class="card-action-btn" aria-label="add to favourite">
+                                    <ion-icon name="heart"></ion-icon>
+                                </button>
+                            
+                                <div class="card-content">
+                                    <h3 class="h3">
+                                        <a href="{% url 'listing_detail' listing.slug %}" class="card-title">{{ listing.title }}</a>
+                                    </h3>
+                                    
+                                    <ul class="card-list">
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="cube-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">{{ listing.zipcode }}</span> <!-- Assuming the zip code stands for sqf -->
+                                        </li>
+                            
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="bed-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">{{ listing.bedrooms }} Beds</span>
+                                        </li>
+                            
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="man-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">{{ listing.bathrooms }} Baths</span>
+                                        </li>
+                                    </ul>
+                            
+                                    <div class="card-meta">
+                                        <div>
+                                            <span class="meta-title">Price</span>
+                                            <span class="meta-text">${{ listing.price }}</span>
+                                        </div>
+                            
+                                        <div>
+                                            <span class="meta-title">Sale Type</span>
+                                            <span class="meta-text">{{ listing.sale_type }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        <br>
+                    </div>
+                {% else %}
+                <h2 style="margin: 1.5% 5%;">{{no_results_message}}</h2>
+                {% endif %}
+            <section class="section about" id="about" aria-level="about">
+                <div class="container">
+                    <div class="about-banner img-holder" style="--width: 600; --height: 700;">
+                        <img src="{% static '/images/abt-banner.jpg'%}" width="600px" height="700px" loading="lazy" alt="" class="img-cover">
+
+                        <button class="play-btn" aria-label="play video">
+                            <ion-icon name="play" aria-hidden="true"></ion-icon>
+                        </button>
+                    </div>
+
+                    <div class="about-content">
+                        <h2 class="h2 section-title">Trusted. Affordable. Transparent</h2>
+                        <p class="section-text">Lorem ipsum dolor sit amet consectetur adipisicing elit. Deserunt commodi ex illo quisquam impedit, corrupti odio placeat dolores eius voluptas? Mollitia quas laborum dolores ipsam dolor. Quo provident at modi!</p>
+                        <a href="#" class="btn btn-primary">Learn More</a>
+                    </div>
+                </div>
+            </section>
+
+            <!--========== SECTION ==========-->
+            <section class="section service" id="service" aria-label="service">
+                <div class="container">
+                    <h2 class="section-title">How It Works</h2>
+                    <p class="section-text">A great platform to buy, sell and rent your properties without any agent or commisions</p>
+                    <ul class="service-list">
+                        <li>
+                            <div class="service-card">
+                                <div class="card-icon">
+                                    <ion-icon name="home-outline"></ion-icon>
+                                </div>
+                                <h3 class="h3 card-title">Evaluate Property</h3>
+                                <p class="card-text">
+                                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Fuga suscipit neque nemo voluptatibus! Quas quis delectus sunt incidunt numquam.
+                                </p>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="service-card">
+                                <div class="card-icon">
+                                    <ion-icon name="briefcase-outline"></ion-icon>
+                                </div>
+                                <h3 class="h3 card-title">Meeting With Agent</h3>
+                                <p class="card-text">
+                                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Fuga suscipit neque nemo voluptatibus! Quas quis delectus sunt incidunt numquam.
+                                </p>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="service-card">
+                                <div class="card-icon">
+                                    <ion-icon name="key-outline"></ion-icon>
+                                </div>
+                                <h3 class="h3 card-title">Close The Deal</h3>
+                                <p class="card-text">
+                                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Fuga suscipit neque nemo voluptatibus! Quas quis delectus sunt incidunt numquam.
+                                </p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <!--=========== PROPERTIES ===========-->
+            <section class="section property" id="property" aria-label="property">
+                <div class="container">
+                    <h2 class="h2 section-title">Featured Properties</h2>
+                    <p class="section-text">
+                        A great platform to buy, sell and rent properties without any agent or commisions.
+                    </p>
+                    <ul class="property-list">
+                        <li>
+                            <div class="property-card">
+                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
+                                    <img src="{% static '/images/img2.jpg'%}" width="800px" height="533" loading="lazy" alt="" class="img-cover">
+                                </figure>
+                                <button class="card-action-btn" aria-label="add to favourite">
+                                    <ion-icon name="heart"></ion-icon>
+                                </button>
+                                <div class="card-content">
+                                    <h3 class="h3">
+                                        <a href="#" class="card-title">75 Manor Way, Great Missenden, UK</a>
+                                    </h3>
+                                    <ul class="card-list">
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="cube-outline"></ion-icon>
+                                            </div>
+
+                                            <span class="item-text">7500sqf</span>
+                                        </li>
+
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="bed-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">3 Beds</span>
+                                        </li>
+
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="man-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">2 Baths</span>
+                                        </li>
+                                    </ul>
+
+                                    <div class="card-meta">
+                                        <div>
+                                            <span class="meta-title">Price</span>
+                                            <span class="meta-text">$3500</span>
+                                        </div>
+
+                                        <div>
+                                            <span class="meta-title">Rating</span>
+                                            <span class="meta-text">
+                                                <div class="rating-wrapper">
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                </div>
+
+                                                <span>5.0(24)</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="property-card">
+                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
+                                    <img src="{% static '/images/img3.jpg'%}" width="800px" height="533" loading="lazy" alt="" class="img-cover">
+                                </figure>
+                                <button class="card-action-btn" aria-label="add to favourite">
+                                    <ion-icon name="heart-outline"></ion-icon>
+                                </button>
+                                <div class="card-content">
+                                    <h3 class="h3">
+                                        <a href="#" class="card-title">12 Bootham Cresent, Ridgeway, UK</a>
+                                    </h3>
+                                    <ul class="card-list">
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="cube-outline"></ion-icon>
+                                            </div>
+
+                                            <span class="item-text">8000sqf</span>
+                                        </li>
+
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="bed-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">3 Beds</span>
+                                        </li>
+
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="man-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">2 Baths</span>
+                                        </li>
+                                    </ul>
+
+                                    <div class="card-meta">
+                                        <div>
+                                            <span class="meta-title">Price</span>
+                                            <span class="meta-text">$4000</span>
+                                        </div>
+
+                                        <div>
+                                            <span class="meta-title">Rating</span>
+                                            <span class="meta-text">
+                                                <div class="rating-wrapper">
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                </div>
+
+                                                <span>5.0(24)</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="property-card">
+                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
+                                    <img src="{% static '/images/img4.jpg'%}" width="800px" height="533" loading="lazy" alt="" class="img-cover">
+                                </figure>
+                                <button class="card-action-btn" aria-label="add to favourite">
+                                    <ion-icon name="heart-outline"></ion-icon>
+                                </button>
+                                <div class="card-content">
+                                    <h3 class="h3">
+                                        <a href="#" class="card-title">49 Consett Rd, Hilton, UK</a>
+                                    </h3>
+                                    <ul class="card-list">
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="cube-outline"></ion-icon>
+                                            </div>
+
+                                            <span class="item-text">8000sqf</span>
+                                        </li>
+
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="bed-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">3 Beds</span>
+                                        </li>
+
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="man-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">3 Baths</span>
+                                        </li>
+                                    </ul>
+
+                                    <div class="card-meta">
+                                        <div>
+                                            <span class="meta-title">Price</span>
+                                            <span class="meta-text">$5000</span>
+                                        </div>
+
+                                        <div>
+                                            <span class="meta-title">Rating</span>
+                                            <span class="meta-text">
+                                                <div class="rating-wrapper">
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                </div>
+
+                                                <span>5.0(24)</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="property-card">
+                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
+                                    <img src="{% static '/images/img5.jpg'%}" width="800px" height="533" loading="lazy" alt="" class="img-cover">
+                                </figure>
+                                <button class="card-action-btn" aria-label="add to favourite">
+                                    <ion-icon name="heart-outline"></ion-icon>
+                                </button>
+                                <div class="card-content">
+                                    <h3 class="h3">
+                                        <a href="#" class="card-title">5 Helland Bridge, Upper Boat, UK</a>
+                                    </h3>
+                                    <ul class="card-list">
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="cube-outline"></ion-icon>
+                                            </div>
+
+                                            <span class="item-text">7500sqf</span>
+                                        </li>
+
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="bed-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">3 Beds</span>
+                                        </li>
+
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="man-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">2 Baths</span>
+                                        </li>
+                                    </ul>
+
+                                    <div class="card-meta">
+                                        <div>
+                                            <span class="meta-title">Price</span>
+                                            <span class="meta-text">$3500</span>
+                                        </div>
+
+                                        <div>
+                                            <span class="meta-title">Rating</span>
+                                            <span class="meta-text">
+                                                <div class="rating-wrapper">
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                </div>
+
+                                                <span>5.0(24)</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="property-card">
+                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
+                                    <img src="{% static '/images/img6.jpg'%}" width="800px" height="533" loading="lazy" alt="" class="img-cover">
+                                </figure>
+                                <button class="card-action-btn" aria-label="add to favourite">
+                                    <ion-icon name="heart-outline"></ion-icon>
+                                </button>
+                                <div class="card-content">
+                                    <h3 class="h3">
+                                        <a href="#" class="card-title">53 Main St, Acharacle, UK</a>
+                                    </h3>
+                                    <ul class="card-list">
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="cube-outline"></ion-icon>
+                                            </div>
+
+                                            <span class="item-text">7500sqf</span>
+                                        </li>
+
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="bed-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">3 Beds</span>
+                                        </li>
+
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="man-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">2 Baths</span>
+                                        </li>
+                                    </ul>
+
+                                    <div class="card-meta">
+                                        <div>
+                                            <span class="meta-title">Price</span>
+                                            <span class="meta-text">$3500</span>
+                                        </div>
+
+                                        <div>
+                                            <span class="meta-title">Rating</span>
+                                            <span class="meta-text">
+                                                <div class="rating-wrapper">
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                </div>
+
+                                                <span>5.0(24)</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="property-card">
+                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
+                                    <img src="{% static '/images/img7.jpg'%}" width="800px" height="533" loading="lazy" alt="" class="img-cover">
+                                </figure>
+                                <button class="card-action-btn" aria-label="add to favourite">
+                                    <ion-icon name="heart-outline"></ion-icon>
+                                </button>
+                                <div class="card-content">
+                                    <h3 class="h3">
+                                        <a href="#" class="card-title">10 Southlands Road, United Kingdom</a>
+                                    </h3>
+                                    <ul class="card-list">
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="cube-outline"></ion-icon>
+                                            </div>
+
+                                            <span class="item-text">8000sqf</span>
+                                        </li>
+
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="bed-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">4 Beds</span>
+                                        </li>
+
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="man-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">3 Baths</span>
+                                        </li>
+                                    </ul>
+
+                                    <div class="card-meta">
+                                        <div>
+                                            <span class="meta-title">Price</span>
+                                            <span class="meta-text">$3500</span>
+                                        </div>
+
+                                        <div>
+                                            <span class="meta-title">Rating</span>
+                                            <span class="meta-text">
+                                                <div class="rating-wrapper">
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                    <ion-icon name="star"></ion-icon>
+                                                </div>
+
+                                                <span>5.0(24)</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <!--=========== TESTIMONY ==========-->
+            <section class="section wrapper wrapper2 top">
+                <div class="container">
+                    <div class="text">
+                        <div class="heading">
+                            <h2>People Said</h2>
+                        </div>
+
+                        <div class="para">
+                            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Consequatur fuga porro veniam qui pariatur officia quas! Adipisci quos, optio deserunt rem quis maiores voluptate quidem ipsa eum placeat nisi id?</p>
+                            <div class="box flex">
+                                <div class="img">
+                                    <img src="{% static '/images/testimonial1.jpg'%}" alt="">
+                                </div> <br>
+                                <div class="name">
+                                    <h5>RAUL SANJIR</h5>
+                                    <h5>IDAHD</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!--========= CONTACT =========-->
+            <section class="section contact" id="contact" aria-label="contact">
+                <div class="container">
+                    <h2 class="h2 section-title">Have a Question ? Get in touch</h2>
+
+                    <p class="section-text">
+                        A great platform to buy, sell, and rent your properties without any agent or comissions
+                    </p>
+                    <button class="btn btn-primary">
+                        <ion-icon name="call-outline"></ion-icon>
+                        <span class="span"><a href="mailto:codemyhobby9@gmail.com">Contact us</a></span>
+                    </button>
+                </div>
+            </section>
+
+            <!--======= FOOTER ========-->
+            <footer class="footer">
+                <div class="footer-top">
+                    <div class="container">
+                        <div class="footer-brand">
+                            <a href="#" class="logo">
+                                <ion-icon name="home-outline"></ion-icon> Realestate
+                            </a>
+                            <p class="footer-text">
+                                A great platform to buy, sell and rent your properties without any agent or comissions
+                            </p>
+                        </div>
+
+                        <ul class="footer-list">
+                            <li>
+                                <p class="footer-list-title">Company</p>
+                            </li>
+                            <li>
+                                <a href="#about" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">About us</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#services" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">Services</span>
+                                 </a>
+                            </li>
+                            <li>
+                                <a href="#properties" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">Pricing</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#contact" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">Contact us</span>
+                                </a>
+                            </li>
+
+                            <li>
+                                <a href="#" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">Login</span>
+                                </a>
+                            </li>
+                        </ul>
+
+                        <ul class="footer-list">
+                            <li>
+                                <p class="footer-list-title">More Links</p>
+                            </li>
+                            <li>
+                                <a href="#properties" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">Listing</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#contact" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">Contact</span>
+                                </a>
+                            </li>
+                        </ul>
+
+                        <ul class="footer-list">
+                            <li>
+                                <p class="footer-list-title">Contact Details</p>
+                            </li>
+
+                            <li class="footer-item">
+                                <ion-icon name="location-outline"></ion-icon>
+                                <address class="address">
+                                    Ring Road <br>
+                                    Benin City, <br>
+                                    Nigeria
+                                    <a href="#" class="address-link">View on Google Maps</a>
+                                </address>
+                            </li>
+
+                            <li class="footer-item">
+                                <ion-icon name="mail-outline"></ion-icon>
+                                <a href="mailto: abrmservices@gmail.com" class="footer-link">abrmservices@gmail.com</a>
+                            </li>
+
+                            <li class="footer-item">
+                                <ion-icon name="call-outline"></ion-icon>
+                                <a href="tel: +2348024342548" class="footer-link">+2348024342548</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <div class="container">
+                        <p class="copyright">
+                            &copy; 2024 Realestate. All rights reserved by <a href="#" class="copyright-link">ABRM_SERVICES</a>
+                        </p>
+
+                        <ul class="social-list">
+                            <li>
+                                <a href="#" class="social-link">
+                                    <ion-icon name="logo-facebook"></ion-icon>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" class="social-link">
+                                    <ion-icon name="logo-instagram"></ion-icon>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" class="social-link">
+                                    <ion-icon name="logo-twitter"></ion-icon>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" class="social-link">
+                                    <ion-icon name="logo-linkedin"></ion-icon>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </footer>
+
+            <!--=========== BACK-TO-TOP ==========-->
+            <a href="#top" class="back-top-btn" aria-label="back to top" data-back-top-btn>
+                <ion-icon name="arrow-up" aria-hidden="true"></ion-icon>
+            </a>
+        </article>
+   </main>
+    
+  <!--========= custom js link =========-->
+  <script src="{% static 'js/main.js'%}"></script>
+
+  <!--=========== ionicon link ==========-->
+  <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+</html> 

@@ -219,3 +219,12 @@ document.getElementById('contact-form').addEventListener('submit', function(even
           alert('FAILED...', error); // Display error message
       });
 });
+
+
+function initialize() {
+  // Initialize the Google Places Autocomplete for the location field
+  const locationInput = new google.maps.places.Autocomplete(document.getElementById('location'));
+}
+
+// Load the autocomplete function on window load
+google.maps.event.addDomListener(window, 'load', initialize);

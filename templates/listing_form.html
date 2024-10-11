@@ -1,0 +1,196 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listing Form</title>
+    <!-- Include Custom CSS -->
+    <style>
+        /* Container Styling */
+        .r-container {
+            max-width: 960px;
+            margin: 50px auto;
+            padding: 20px;
+            justify-content: space-around;
+            gap: 2rem;
+            background: #f7f7f7;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Typography */
+        h2 {
+            font-family: 'Arial', sans-serif;
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* Form Styling */
+        .r-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .r-input, .r-select, .r-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            background: #fff;
+            box-sizing: border-box;
+        }
+
+        .r-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .r-col {
+            flex: 1;
+            min-width: 45%;
+        }
+
+        /* Button Styling */
+        .r-btn-primary {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #007bff;
+            border: none;
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .r-btn-primary:hover {
+            background: #0056b3;
+        }
+
+        /* Checkbox Styling */
+        .r-form-check {
+            display: flex;
+            align-items: center;
+        }
+
+        .r-form-check input[type="checkbox"] {
+            margin-right: 10px;
+            width: auto;
+        }
+
+        .r-form-check-label {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="r-container">
+        <h2>Create a New Listing</h2>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Start of form fields row by row -->
+            <div class="r-row">
+                <div class="r-col">
+                    <label for="id_realtor" class="r-label">Realtor Email</label>
+                    {{ cform.realtor }}
+                </div>
+                <div class="r-col">
+                    <label for="id_title" class="r-label">Title</label>
+                    {{ cform.title }}
+                </div>
+            </div>
+
+            <div class="r-row">
+                <div class="r-col">
+                    <label for="id_slug" class="r-label">Slug</label>
+                    {{ cform.slug }}
+                </div>
+                <div class="r-col">
+                    <label for="id_location" class="r-label">Location</label>
+                    {{ cform.location }}
+                </div>
+            </div>
+
+            <div class="r-row">
+                <div class="r-col">
+                    <label for="id_zipcode" class="r-label">Zip Code</label>
+                    {{ cform.zipcode }}
+                </div>
+                <div class="r-col">
+                    <label for="id_price" class="r-label">Price</label>
+                    {{ cform.price }}
+                </div>
+            </div>
+
+            <div class="r-row">
+                <div class="r-col">
+                    <label for="id_bedrooms" class="r-label">Bedrooms</label>
+                    {{ cform.bedrooms }}
+                </div>
+                <div class="r-col">
+                    <label for="id_bathrooms" class="r-label">Bathrooms</label>
+                    {{ cform.bathrooms }}
+                </div>
+            </div>
+
+            <div class="r-row">
+                <div class="r-col">
+                    <label for="id_sale_type" class="r-label">Sale Type</label>
+                    {{ cform.sale_type }}
+                </div>
+                <div class="r-col">
+                    <label for="id_home_type" class="r-label">Home Type</label>
+                    {{ cform.home_type }}
+                </div>
+            </div>
+
+            <div class="r-row">
+                <div class="r-col">
+                    <label for="id_main_photo" class="r-label">Main Photo</label>
+                    {{ cform.main_photo }}
+                </div>
+                <div class="r-col">
+                    <label for="id_photo_1" class="r-label">Additional Photo 1</label>
+                    {{ cform.photo_1 }}
+                </div>
+            </div>
+
+            <div class="r-row">
+                <div class="r-col">
+                    <label for="id_photo_2" class="r-label">Additional Photo 2</label>
+                    {{ cform.photo_2 }}
+                </div>
+                <div class="r-col">
+                    <label for="id_photo_3" class="r-label">Additional Photo 3</label>
+                    {{ cform.photo_3 }}
+                </div>
+            </div>
+
+            <div class="r-row">
+                <div class="r-col">
+                    <div class="r-form-check">
+                        {{ cform.is_published }}
+                        <label class="r-form-check-label" for="id_is_published">Is Published?</label>
+                    </div>
+                </div>
+                <div class="r-col">
+                    <label for="id_date_created" class="r-label">Date Created</label>
+                    {{ cform.date_created }}
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <button type="submit" class="r-btn-primary">Save Listing</button>
+        </form>
+    </div>
+</body>
+</html>

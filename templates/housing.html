@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Catamaran:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css"/>
     <link rel="stylesheet" href="{% static 'css/style.css'%}">
     <script src="static/settings.js"></script>
@@ -66,6 +67,43 @@
     </nav>
 </header>
 <body style="padding-top: 6rem;">
+    <h4>Search Listings</h4>
+    <form method="get" action="{% url 'housing' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <br>
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- Display search results -->
+    {% if listings %}
+        <h2>Search Results:</h2>
+        <ul>
+            {% for listing in listings %}
+                <div class="listing">
+                    <h2>{{ listing.title }}</h2>
+                    <p>{{ listing.description }}</p>
+            
+                    <!-- Display the main photo if it exists -->
+                    {% if listing.main_photo %}
+                        <img src="{{ listing.main_photo.url }}" alt="{{ listing.title }}" style="width:300px; height:auto;">
+                    {% else %}
+                        <p>No image available</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </ul>
+    
+    {% else %}
+        {% if no_results_message %}
+            <p>{{ no_results_message }}</p>
+        {% endif %}
+    {% endif %}
+
+
+
+
+
 
     Display houses for rent
     <h2>Houses for Rent</h2>

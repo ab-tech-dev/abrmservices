@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from rest_framework.views import APIView
 from .models import Listing
 from rest_framework import status, permissions
@@ -9,8 +9,10 @@ from django.contrib.postgres.search import SearchVector, SearchQuery
 from django.http import JsonResponse
 from django.core.mail import send_mail, EmailMessage
 from django.conf import settings
+from django import forms
+import datetime
 import os
-from .models import House
+# from .models import House
 # Create your views here.
 from mailersend import emails
 import base64
@@ -422,9 +424,6 @@ class ListingsView(APIView):
                 {'error' : 'Something went wrong when retrieving listings'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        
-
-from django.db.models import Q
 
 
 from django.db.models import Q
@@ -447,130 +446,344 @@ SEARCH_FIELDS_CHOICES = [
     ('city', 'City'),
     ('description', 'Description'),
     ('home_type', 'Home Type'),
-    ('realtor', 'Realtor'),
     ('sale_type', 'Sale Type'),
-    ('slug', 'Slug'),
     ('state', 'State'),
-    ('title', 'Title'),
-    ('zipcode', 'Zip Code'),
+
 ]
 
+
+
+from django.db.models import Q
+from .models import Listing
+
+
+
+from django import forms
+
 class SearchForm(forms.Form):
-    # Define a field for search criteria with the choices
-    search_field = forms.ChoiceField(choices=SEARCH_FIELDS_CHOICES, label='Search Field')
-    # Define a field for the search term
-    search_term = forms.CharField(max_length=100, label='Search Term')
+    SEARCH_CHOICES = [
+        ('house', 'House'),
+        ('apartment', 'Apartment'),
+        ('offices', 'Offices'),
+        ('townhome', 'Townhome'),
+        ('estate_house', 'A house in an estate'),  # Added option
+    ]
+    
+    CATEGORY_CHOICES = [
+        ('500', '500'),
+        ('1000', '1000'),
+        ('2000', '2000'),
+        ('3000', '3000'),
+        ('4000', '4000'),
+        ('5000', '5000'),
+        ('6000', '6000'),
+    ]
 
-class SearchListingsView(APIView):
-    permission_classes = [permissions.AllowAny]
+    search = forms.CharField(
+        label='Search: *',
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Add your decription',
+            'required': 'required',
+            'class': 'input-field'
+        })
+    )
+    
+    location = forms.CharField(
+        max_length=255,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'id': 'location',
+            'placeholder': 'Enter a location',
+            'class': 'input-field'
+        })
+    )
 
-    def get(self, request, format=None):
-        try:
-            # Process the search form data
-            search_form = SearchForm(request.GET)
+    category = forms.ChoiceField(
+        label='Select Categories',
+        choices=SEARCH_CHOICES,
+        widget=forms.Select(attrs={'class': 'dropdown-list'})
+    )
 
-            if search_form.is_valid():
-                search_field = search_form.cleaned_data['search_field']
-                search_term = search_form.cleaned_data['search_term']
+    min_price = forms.ChoiceField(
+        label='Min Price:',
+        choices= CATEGORY_CHOICES,
+        widget=forms.Select(attrs={'class': 'dropdown-list'})
+    )
 
-                # Check if a valid search field is selected
-                if search_field not in search_fields:
-                    return Response(
-                        {'error': 'Invalid search field'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
-                # Construct the query based on the selected field and term
-                query = Q(is_published=True)
-                query |= Q(**{f'{search_field}__icontains': search_term})
-
-            else:
-                # If the form is not valid or no search criteria is provided, use keyword search
-                search = request.query_params.get('search')
-
-                if not search:
-                    return Response(
-                        {'error': 'No search query provided'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
-                # Define the fields you want to search
-                search_fields = [
-                    'address',
-                    'bathrooms',
-                    'bedrooms',
-                    'city',
-                    'description',
-                    'home_type',
-                    'realtor',
-                    'sale_type',
-                    'slug',
-                    'state',
-                    'title',
-                    'zipcode',
-                ]
-
-                # Create a SearchQuery object
-                search_query = SearchQuery(search)
-
-                # Initialize a query object
-                query = Q(is_published=True)  # Add the condition for is_published
-
-                # Build the dynamic query for each field
-                for field in search_fields:
-                    query |= Q(**{f'{field}__icontains': search})
-
-                # Execute the query
-                listings = Listing.objects.filter(query)
-
-                for listing in listings:
-                    print(listing.title)
-
-                return Response(
-                    {'success': 'Search successful', 'listings': [listing.title for listing in listings]},
-                    status=status.HTTP_200_OK
-                )
-
-        except Exception as e:
-            return Response(
-                {'error': f'Something went wrong when searching for listings: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+    max_price = forms.ChoiceField(
+        label='Max Price:',
+        choices=CATEGORY_CHOICES,
+        widget=forms.Select(attrs={'class': 'dropdown-list'})
+    )
 
 
 
-# for the html page
-# <form method="get" action="{% url 'search' %}">
-#     {% csrf_token %}
-#     <label for="{{ search_form.search_field.id_for_label }}">Search Field:</label>
-#     {{ search_form.search_field }}
-#     <br>
-#     <label for="{{ search_form.search_term.id_for_label }}">Search Term:</label>
-#     {{ search_form.search_term }}
-#     <br>
-#     <button type="submit">Search</button>
-# </form>
 
 
 
-from .models import House
+ # Import your Listing model
 
 def housing(request):
-    # Retrieve all house objects from the database
-    houses = House.objects.all()
-    rent_houses = House.objects.filter(status='rent')
-    sale_houses = House.objects.filter(status='sale')
+    no_results_message = ''
+    form = SearchForm(request.POST or None)  # Use GET request to retrieve query parameters
+    listings = Listing.objects.none() 
+    # Start with an empty QuerySet
+    cform = ListingForm(request.POST, request.FILES)
+
+    if cform.is_valid():
+            cform.save()
+            return redirect('listing_list')  # Redirect to a view that lists all listings or a success page
+    else:
+        cform = ListingForm()
+
+
+    if form.is_valid():  # Only process if the form is valid
+        location = form.cleaned_data['location']
+        home_type = form.cleaned_data.get('category')  # Get the home type (category from form)
+        search_description = form.cleaned_data.get('search')  # Get the search field description
+        min_price = form.cleaned_data.get('min_price')  # Get the minimum price from form
+        max_price = form.cleaned_data.get('max_price')  # Get the maximum price from form
+
+        # Filtering based on optional fields in the model
+        query = Q()
+
+        if location:
+            query &= Q(location__icontains=location)
+        if home_type:
+            query &= Q(home_type=home_type)  # Match home_type in Listing model
+        if search_description:
+            query |= Q(description__icontains=search_description)  # Match description
+        if min_price:
+            query |= Q(price__gte=int(min_price))  # price >= min_price
+        if max_price:
+            query |= Q(price__lte=int(max_price))  # price <= max_price
+
+        # Retrieve additional query parameters from the model's attributes
+        sale_type = request.GET.get('sale_type')  # Check for `sale_type` field in GET parameters
+        bedrooms = request.GET.get('bedrooms')  # Check for `bedrooms` field in GET parameters
+
+        if sale_type:
+            query &= Q(sale_type=sale_type)  # Filter by sale_type if provided
+        if bedrooms:
+            try:
+                query &= Q(bedrooms=int(bedrooms))  # Convert to int and filter by number of bedrooms
+            except ValueError:
+                pass  # Ignore invalid bedroom inputs for filtering
+
+        # Print the query details to the terminal for debugging
+        print(f"Query: {query}")
+
+        # Execute query and get the filtered results
+        listings = Listing.objects.filter(query).filter(is_published=True)  # Only show published listings
+
+
+        # Check if there are no results
+        if not listings.exists():
+            no_results_message = "No results found."
+
+    # Render the template with form and listings
+    return render(request, 'index.html', {
+        'form': form,
+        'listings': listings,
+        'no_results_message': no_results_message,
+        'cform': cform
+    })
+
+
+
+from django import forms
+from .models import Listing
+
+class ListingForm(forms.ModelForm):
+    # If there are any choices to use for select fields, define them here
+    SALE_TYPE_CHOICES = [
+        ('sale', 'Sale'),
+        ('rent', 'Rent'),
+    ]
     
-    context = {
-        'rent_houses': rent_houses,
-        'sale_houses': sale_houses,
-        'houses': houses
+    HOME_TYPE_CHOICES = [
+        ('house', 'House'),
+        ('apartment', 'Apartment'),
+        ('condo', 'Condo'),
+        ('townhome', 'Townhome'),
+    ]
+    
+    class Meta:
+        model = Listing
+        fields = [
+            'realtor', 'title', 'slug', 'location', 'zipcode',
+            'description', 'price', 'bedrooms', 'bathrooms', 'sale_type',
+            'home_type', 'main_photo', 'photo_1', 'photo_2', 'photo_3',
+            'is_published', 'date_created'
+        ]
+    
+    realtor = forms.EmailField(
+        label='Realtor Email',
+        widget=forms.EmailInput(attrs={
+            'placeholder': 'Enter Realtor Email',
+            'required': 'required',
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
 
-    }
+    title = forms.CharField(
+        label='Title',
+        max_length=255,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter Title',
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
+
+    slug = forms.CharField(
+        label='Slug',
+        max_length=255,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Unique Identifier (Slug)',
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
+
+    location = forms.CharField(
+        label='Location',
+        max_length=255,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter Location',
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
+
+    zipcode = forms.CharField(
+        label='Zip Code',
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter Zip Code',
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
+
+    description = forms.CharField(
+        label='Description',
+        widget=forms.Textarea(attrs={
+            'rows': 5,
+            'cols': 17,
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: auto,font-size: 16px;',
+            'placeholder': 'Enter Description',
+            'class': 'form-control',
+        })
+    )
+
+    price = forms.DecimalField(
+        label='Price',
+        max_digits=10,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            'placeholder': 'Enter Price',
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
+
+    bedrooms = forms.IntegerField(
+        label='Bedrooms',
+        widget=forms.NumberInput(attrs={
+            'placeholder': 'Number of Bedrooms',
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
+
+    bathrooms = forms.IntegerField(
+        label='Bathrooms',
+        widget=forms.NumberInput(attrs={
+            'placeholder': 'Number of Bathrooms',
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
+
+    sale_type = forms.ChoiceField(
+        label='Sale Type',
+        choices=SALE_TYPE_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
+
+    home_type = forms.ChoiceField(
+        label='Home Type',
+        choices=HOME_TYPE_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
+
+    main_photo = forms.ImageField(
+        label='Main Photo',
+        widget=forms.FileInput(attrs={
+            'class': 'form-control-file',
+            'style': 'margin-top: 5px;',
+        })
+    )
+
+    photo_1 = forms.ImageField(
+        label='Photo 1',
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control-file',
+            'style': 'margin-top: 5px;',
+        })
+    )
+
+    photo_2 = forms.ImageField(
+        label='Photo 2',
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control-file',
+            'style': 'margin-top: 5px;',
+        })
+    )
+
+    photo_3 = forms.ImageField(
+        label='Photo 3',
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control-file',
+            'style': 'margin-top: 5px;',
+        })
+    )
+
+    is_published = forms.BooleanField(
+        label='Is Published?',
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'style': 'margin-top: 10px;',
+        })
+    )
+
+    date_created = forms.DateTimeField(
+        label='Date Created',
+        initial=datetime.datetime.now,  # Set the initial value to the current date and time
+        widget=forms.DateTimeInput(attrs={
+            'placeholder': 'YYYY-MM-DD HH:MM:SS',
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
 
 
-    # Render the template with the context data
-    return render(request, 'housing.html', context)
+
+    
+
 
 
 def main(request):
