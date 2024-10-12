@@ -3,45 +3,65 @@ from django.utils.timezone import now
 
 
 # Create your models here.
+from django.db import models
+from django.utils.timezone import now
+from decimal import Decimal
+
 class Listing(models.Model):
     class SaleType(models.TextChoices):
         FOR_SALE = 'For Sale'
         FOR_RENT = 'For Rent'
 
     class HomeType(models.TextChoices):
-        HOUSE = 'House'
-        CONDO = 'Condo'
-        TOWNHOUSE = 'Townhouse'
+        HOUSE = 'house', 'House'
+        APARTMENT = 'apartment', 'Apartment'
+        CONDO = 'condo', 'Condo'
+        TOWNHOME = 'townhome', 'Townhome'
 
     realtor = models.EmailField(max_length=255)
     title = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
     location = models.CharField(max_length=255)
-    zipcode = models.CharField(max_length=255)
+    zipcode = models.CharField(max_length=20)  # Adjusted to fit realistic zip codes
     description = models.TextField()
-    price = models.IntegerField()
+    
+    # Adjust price to allow larger values with decimal places
+    price = models.DecimalField(max_digits=12, decimal_places=2)
+
     bedrooms = models.IntegerField()
+    
+    # Bathrooms can have decimal values (e.g., 1.5 bathrooms)
     bathrooms = models.DecimalField(max_digits=3, decimal_places=1)
-    sale_type = models.CharField(max_length=10, choices=SaleType.choices, default=SaleType.FOR_SALE)
-    home_type = models.CharField(max_length=10, choices=HomeType.choices, default=HomeType.HOUSE)
+
+    # Choices for sale and home type with adjusted max_length
+    sale_type = models.CharField(max_length=8, choices=SaleType.choices, default=SaleType.FOR_SALE)
+    home_type = models.CharField(
+        max_length=10,  # Ensure max_length is appropriate for the longest choice ('townhome')
+        choices=HomeType.choices,
+        default=HomeType.HOUSE  # Set default value if needed
+    )
     main_photo = models.ImageField(upload_to='listings/')
     photo_1 = models.ImageField(upload_to='listings/', blank=True, null=True)
     photo_2 = models.ImageField(upload_to='listings/', blank=True, null=True)
     photo_3 = models.ImageField(upload_to='listings/', blank=True, null=True)
+
     is_published = models.BooleanField(default=False)
     date_created = models.DateTimeField(default=now)
 
-    def delete(self):
+    # Overriding the delete method to ensure photos are deleted from storage
+    def delete(self, *args, **kwargs):
         self.main_photo.storage.delete(self.main_photo.name)
-        self.photo_1.storage.delete(self.photo_1.name)
-        self.photo_2.storage.delete(self.photo_2.name)
-        self.photo_3.storage.delete(self.photo_3.name)
-
-
-        super().delete()
+        if self.photo_1:
+            self.photo_1.storage.delete(self.photo_1.name)
+        if self.photo_2:
+            self.photo_2.storage.delete(self.photo_2.name)
+        if self.photo_3:
+            self.photo_3.storage.delete(self.photo_3.name)
+        super().delete(*args, **kwargs)
 
     def __str__(self):
         return self.title
+
 
 
 # # Create your models here.

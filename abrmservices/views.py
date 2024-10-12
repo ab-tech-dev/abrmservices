@@ -520,95 +520,19 @@ class SearchForm(forms.Form):
 
 
 
-
-
- # Import your Listing model
-
-def housing(request):
-    no_results_message = ''
-    form = SearchForm(request.POST or None)  # Use GET request to retrieve query parameters
-    listings = Listing.objects.none() 
-    # Start with an empty QuerySet
-    cform = ListingForm(request.POST, request.FILES)
-
-    if cform.is_valid():
-            cform.save()
-            return redirect('listing_list')  # Redirect to a view that lists all listings or a success page
-    else:
-        cform = ListingForm()
-
-
-    if form.is_valid():  # Only process if the form is valid
-        location = form.cleaned_data['location']
-        home_type = form.cleaned_data.get('category')  # Get the home type (category from form)
-        search_description = form.cleaned_data.get('search')  # Get the search field description
-        min_price = form.cleaned_data.get('min_price')  # Get the minimum price from form
-        max_price = form.cleaned_data.get('max_price')  # Get the maximum price from form
-
-        # Filtering based on optional fields in the model
-        query = Q()
-
-        if location:
-            query &= Q(location__icontains=location)
-        if home_type:
-            query &= Q(home_type=home_type)  # Match home_type in Listing model
-        if search_description:
-            query |= Q(description__icontains=search_description)  # Match description
-        if min_price:
-            query |= Q(price__gte=int(min_price))  # price >= min_price
-        if max_price:
-            query |= Q(price__lte=int(max_price))  # price <= max_price
-
-        # Retrieve additional query parameters from the model's attributes
-        sale_type = request.GET.get('sale_type')  # Check for `sale_type` field in GET parameters
-        bedrooms = request.GET.get('bedrooms')  # Check for `bedrooms` field in GET parameters
-
-        if sale_type:
-            query &= Q(sale_type=sale_type)  # Filter by sale_type if provided
-        if bedrooms:
-            try:
-                query &= Q(bedrooms=int(bedrooms))  # Convert to int and filter by number of bedrooms
-            except ValueError:
-                pass  # Ignore invalid bedroom inputs for filtering
-
-        # Print the query details to the terminal for debugging
-        print(f"Query: {query}")
-
-        # Execute query and get the filtered results
-        listings = Listing.objects.filter(query).filter(is_published=True)  # Only show published listings
-
-
-        # Check if there are no results
-        if not listings.exists():
-            no_results_message = "No results found."
-
-    # Render the template with form and listings
-    return render(request, 'index.html', {
-        'form': form,
-        'listings': listings,
-        'no_results_message': no_results_message,
-        'cform': cform
-    })
-
-
-
-from django import forms
-from .models import Listing
-
 class ListingForm(forms.ModelForm):
-    # If there are any choices to use for select fields, define them here
     SALE_TYPE_CHOICES = [
-        ('sale', 'Sale'),
-        ('rent', 'Rent'),
+        ('For Sale', 'For Sale'),
+        ('For Rent', 'For Rent'),
     ]
-    
+
     HOME_TYPE_CHOICES = [
         ('house', 'House'),
         ('apartment', 'Apartment'),
         ('condo', 'Condo'),
         ('townhome', 'Townhome'),
     ]
-    
+
     class Meta:
         model = Listing
         fields = [
@@ -617,7 +541,7 @@ class ListingForm(forms.ModelForm):
             'home_type', 'main_photo', 'photo_1', 'photo_2', 'photo_3',
             'is_published', 'date_created'
         ]
-    
+
     realtor = forms.EmailField(
         label='Realtor Email',
         widget=forms.EmailInput(attrs={
@@ -648,6 +572,12 @@ class ListingForm(forms.ModelForm):
         })
     )
 
+    def clean_slug(self):
+        slug = self.cleaned_data.get('slug')
+        if ' ' in slug:
+            raise forms.ValidationError("Slug cannot contain spaces.")
+        return slug.replace(' ', '-').lower()
+
     location = forms.CharField(
         label='Location',
         max_length=255,
@@ -668,12 +598,18 @@ class ListingForm(forms.ModelForm):
         })
     )
 
+    def clean_zipcode(self):
+        zipcode = self.cleaned_data.get('zipcode')
+        if not zipcode.isnumeric() or len(zipcode) < 5:
+            raise forms.ValidationError("Zip code must be at least 5 digits long and contain only numbers.")
+        return zipcode
+
     description = forms.CharField(
         label='Description',
         widget=forms.Textarea(attrs={
             'rows': 5,
             'cols': 17,
-            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: auto,font-size: 16px;',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: auto;font-size: 16px;',
             'placeholder': 'Enter Description',
             'class': 'form-control',
         })
@@ -681,7 +617,7 @@ class ListingForm(forms.ModelForm):
 
     price = forms.DecimalField(
         label='Price',
-        max_digits=10,
+        max_digits=13,
         decimal_places=2,
         widget=forms.NumberInput(attrs={
             'placeholder': 'Enter Price',
@@ -689,6 +625,12 @@ class ListingForm(forms.ModelForm):
             'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
         })
     )
+
+    def clean_price(self):
+        price = self.cleaned_data.get('price')
+        if price <= 0:
+            raise forms.ValidationError("Price must be greater than zero.")
+        return price
 
     bedrooms = forms.IntegerField(
         label='Bedrooms',
@@ -699,6 +641,12 @@ class ListingForm(forms.ModelForm):
         })
     )
 
+    def clean_bedrooms(self):
+        bedrooms = self.cleaned_data.get('bedrooms')
+        if bedrooms < 0:
+            raise forms.ValidationError("Number of bedrooms cannot be negative.")
+        return bedrooms
+
     bathrooms = forms.IntegerField(
         label='Bathrooms',
         widget=forms.NumberInput(attrs={
@@ -707,6 +655,12 @@ class ListingForm(forms.ModelForm):
             'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
         })
     )
+
+    def clean_bathrooms(self):
+        bathrooms = self.cleaned_data.get('bathrooms')
+        if bathrooms < 0:
+            raise forms.ValidationError("Number of bathrooms cannot be negative.")
+        return bathrooms
 
     sale_type = forms.ChoiceField(
         label='Sale Type',
@@ -772,15 +726,85 @@ class ListingForm(forms.ModelForm):
 
     date_created = forms.DateTimeField(
         label='Date Created',
-        initial=datetime.datetime.now,  # Set the initial value to the current date and time
+        initial=datetime.datetime.now,
         widget=forms.DateTimeInput(attrs={
             'placeholder': 'YYYY-MM-DD HH:MM:SS',
             'class': 'form-control',
             'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
-        })
+            'value': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        }),
     )
 
 
+def housing(request):
+    no_results_message = ''
+    form = SearchForm(request.POST or None)  # Use GET request to retrieve query parameters
+    listings = Listing.objects.none() 
+    # Start with an empty QuerySet
+    cform = ListingForm(request.POST, request.FILES)
+
+    if cform.is_valid():
+        cform.save()
+        print(f"CForm: {cform}")
+        return redirect('listings')  # Redirect to a view that lists all listings or a success page
+    else:
+        print(f"Form errors: {cform.errors}")
+        print(f"Form data: {request.POST}")
+        print(f"Form files: {request.FILES}")
+
+
+
+    if form.is_valid():  # Only process if the form is valid
+        location = form.cleaned_data['location']
+        home_type = form.cleaned_data.get('category')  # Get the home type (category from form)
+        search_description = form.cleaned_data.get('search')  # Get the search field description
+        min_price = form.cleaned_data.get('min_price')  # Get the minimum price from form
+        max_price = form.cleaned_data.get('max_price')  # Get the maximum price from form
+
+        # Filtering based on optional fields in the model
+        query = Q()
+
+        if location:
+            query &= Q(location__icontains=location)
+        if home_type:
+            query &= Q(home_type=home_type)  # Match home_type in Listing model
+        if search_description:
+            query |= Q(description__icontains=search_description)  # Match description
+        if min_price:
+            query |= Q(price__gte=int(min_price))  # price >= min_price
+        if max_price:
+            query |= Q(price__lte=int(max_price))  # price <= max_price
+
+        # Retrieve additional query parameters from the model's attributes
+        sale_type = request.GET.get('sale_type')  # Check for `sale_type` field in GET parameters
+        bedrooms = request.GET.get('bedrooms')  # Check for `bedrooms` field in GET parameters
+
+        if sale_type:
+            query &= Q(sale_type=sale_type)  # Filter by sale_type if provided
+        if bedrooms:
+            try:
+                query &= Q(bedrooms=int(bedrooms))  # Convert to int and filter by number of bedrooms
+            except ValueError:
+                pass  # Ignore invalid bedroom inputs for filtering
+
+        # Print the query details to the terminal for debugging
+        print(f"CForm: {cform}")
+
+        # Execute query and get the filtered results
+        listings = Listing.objects.filter(query).filter(is_published=True)  # Only show published listings
+
+
+        # Check if there are no results
+        if not listings.exists():
+            no_results_message = "No results found."
+
+    # Render the template with form and listings
+    return render(request, 'index.html', {
+        'form': form,
+        'listings': listings,
+        'no_results_message': no_results_message,
+        'cform': cform
+    })
 
     
 
