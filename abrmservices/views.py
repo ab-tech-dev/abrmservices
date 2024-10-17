@@ -493,7 +493,7 @@ class SearchForm(forms.Form):
         max_length=255,
         required=True,
         widget=forms.TextInput(attrs={
-            'id': 'location',
+            'id': 'id_location',
             'placeholder': 'Enter a location',
             'class': 'input-field'
         })
@@ -584,6 +584,7 @@ class ListingForm(forms.ModelForm):
         widget=forms.TextInput(attrs={
             'placeholder': 'Enter Location',
             'class': 'form-control',
+            'id': 'id_location',
             'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
         })
     )
@@ -735,13 +736,102 @@ class ListingForm(forms.ModelForm):
         }),
     )
 
-
+from user.forms import RegisterForm, LoginForm
+from django.contrib import messages
+from .forms import RegisterForm
+from .models import User
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from .forms import LoginForm
 def housing(request):
     no_results_message = ''
     form = SearchForm(request.POST or None)  # Use GET request to retrieve query parameters
     listings = Listing.objects.none() 
     # Start with an empty QuerySet
     cform = ListingForm(request.POST, request.FILES)
+
+
+    register_form = RegisterForm(request.POST)
+    
+    if register_form.is_valid():
+        try:
+            # Extract cleaned data from the valid form
+            name = register_form.cleaned_data.get('name')
+            email = register_form.cleaned_data.get('email').lower()
+            password = register_form.cleaned_data.get('password')
+            re_password = register_form.cleaned_data.get('re_password')
+            is_realtor = register_form.cleaned_data.get('is_realtor')
+
+            # Check if passwords match and meet length requirements
+            if password == re_password and len(password) >= 8:
+                # Check if the email already exists in the database
+                if not User.objects.filter(email=email).exists():
+                    # Determine if the user is a realtor or a regular user
+                    if is_realtor:
+                        user = User.objects.create_realtor(name=name, email=email)
+                        user.set_password(password)
+                        user.save()
+                        messages.success(request, 'Realtor account created successfully')
+                    else:
+                        user = User.objects.create_user(name=name, email=email)
+                        user.set_password(password)
+                        user.save()
+                        messages.success(request, 'User account created successfully')
+
+                    # Redirect to the login page after successful registration
+                    return redirect('login')
+
+                else:
+                    messages.error(request, 'User with this email already exists')
+
+            elif len(password) < 8:
+                messages.error(request, 'Password must be at least 8 characters in length')
+
+            else:
+                messages.error(request, 'Passwords do not match')
+
+        except ValueError as e:
+            messages.error(request, f'ValueError: {str(e)}')
+
+        except Exception as e:
+            messages.error(request, f'Something went wrong when registering an account: {str(e)}')
+
+    
+    else:
+        # Instantiate a blank form if it's not a POST request
+        register_form = RegisterForm()
+
+    # Render the registration template with the form
+
+
+    login_form = LoginForm(request.POST or None)
+
+    if login_form.is_valid():
+        try:
+            # Extract email and password from the cleaned form data
+            email = login_form.cleaned_data.get('email').lower()
+            password = login_form.cleaned_data.get('password')
+
+            # Authenticate the user
+            user = authenticate(request, email=email, password=password)
+
+            if user is not None:
+                if user.is_active:
+                    # Log the user in if authentication succeeds
+                    login(request, user)
+                    messages.success(request, 'Login successful')
+                    return redirect('home')
+                else:
+                    # Handle the case where the user is deactivated
+                    messages.error(request, 'User account is deactivated')
+            else:
+                # Handle invalid credentials
+                messages.error(request, 'Invalid email or password')
+
+        except Exception as e:
+            # Catch any unexpected errors
+            messages.error(request, f'Something went wrong: {str(e)}')
 
     if cform.is_valid():
         cform.save()
@@ -798,9 +888,14 @@ def housing(request):
         if not listings.exists():
             no_results_message = "No results found."
 
+        # return redirect('/housing/#search-result')
+
+
     # Render the template with form and listings
     return render(request, 'index.html', {
         'form': form,
+        'login_form': login_form,
+        'register_form': register_form,
         'listings': listings,
         'no_results_message': no_results_message,
         'cform': cform

@@ -85,3 +85,45 @@ class RetrieveUserView(APIView):
             # Raise a more specific exception or handle it accordingly
             raise APIException('Something went wrong when retrieving user details')
 
+from django.contrib.auth import authenticate, login, logout
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+
+class LoginView(APIView):
+    permission_classes = (AllowAny, )
+
+    def post(self, request):
+        data = request.data
+        email = data.get('email').lower()
+        password = data.get('password')
+
+        try:
+            # Authenticate user
+            user = authenticate(request, email=email, password=password)
+            if user is not None:
+                if user.is_active:
+                    login(request, user)
+                    token, created = Token.objects.get_or_create(user=user)
+                    return Response({
+                        'success': 'Login successful',
+                        'token': token.key,
+                        'user': UserSerializer(user).data
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response({'error': 'User account is deactivated'}, status=status.HTTP_403_FORBIDDEN)
+            else:
+                return Response({'error': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({'error': f'Something went wrong: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class LogoutView(APIView):
+    def post(self, request):
+        try:
+            request.user.auth_token.delete()
+            logout(request)
+            return Response({'success': 'Logged out successfully'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': f'Something went wrong: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

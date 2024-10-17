@@ -56,3 +56,39 @@ const changeTab = function(){
 }
 
 addEventOnElement(tabBtns, "click", changeTab)
+
+function initAutocomplete() {
+    var input = document.getElementById('id_location');
+    var autocomplete = new google.maps.places.Autocomplete(input);
+
+    // Bias the autocomplete predictions towards the user's location (optional)
+    autocomplete.setComponentRestrictions({'country': ['ng']});  // Restrict to Nigeria (optional)
+    
+    autocomplete.addListener('place_changed', function() {
+        var place = autocomplete.getPlace();
+        if (!place.geometry) {
+            return;
+        }
+
+        // You can extract place details like lat/long if needed
+        var latitude = place.geometry.location.lat();
+        var longitude = place.geometry.location.lng();
+        console.log("Selected location: ", place.formatted_address);
+    });
+}
+
+// Initialize the autocomplete when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initAutocomplete();
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.location.hash === '#search-result') {
+            const target = document.getElementById('search-result');
+            if (target) {
+                setTimeout(function() {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }, 100);  // Delay to ensure rendering is complete before scrolling
+            }
+        }
+    });
+
+});

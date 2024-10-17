@@ -14,7 +14,7 @@ urlpatterns = [
     path('about', views.about, name = 'about'),
     path('quotes', views.getaquote, name = 'get-a-quote'),
     path('termsandconditions', views.termsandconditions, name = 'termsandconditions'),
-    path('housing', views.housing, name = 'housing'),
+    path('housing/', views.housing, name = 'housing'),
     path('submitmyform', views.submitmyform, name = 'submitmyform'),
     path('listing/<slug:slug>/', views.housing, name='listing_detail'),
 ]
