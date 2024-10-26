@@ -36,12 +36,37 @@
                     <li>
                         <a href="#" class="navbar-link" data-nav-link>Contact</a>
                     </li>
+                    <li>
+                        {% if is_logged_in %}
+                            <form method="POST" action="" class="navbar-link" data-nav-link>
+                                {% csrf_token %}
+                                <button type="submit" class="" name="logout" style="color: #007BFF;">Logout</button>
+                            </form>
+                        {% endif %}
+                    </li>
                 </ul>
             </nav>
             {% if user.is_authenticated %}
                 <a href="{% url 'mydashboard' %}" class="btn btn-secondary">View Dashboard</a>
             {% else %}
-                <a href="#login-form" class="btn btn-secondary" onclick="document.getElementById('login-form').style.display='block';">Login</a>
+                <a href="#login" class="btn btn-secondary" onclick="
+                document.getElementById('login-form').style.display='block';
+                document.getElementById('buy-btn').style.color = 'black';
+                document.getElementById('sell-btn').style.color = 'white';
+                document.getElementById('rent-btn').style.color = 'black';
+                document.getElementById('buy-btn').style.background = 'none';
+                document.getElementById('sell-btn').style.background = '#007BFF';
+                document.getElementById('rent-btn').style.background = 'none';
+                document.getElementById('formsr').style.display = 'block';
+
+
+                document.getElementById('formsr').style.zIndex = 2;
+                document.getElementById('formsr').style.background = 'blue';
+                document.getElementById('search-form').style.display = 'none';  // Adjust this as needed
+            
+                document.getElementById('formsr').style.zIndex = 2;
+                document.getElementById('formsr').style.background = 'white';
+                ">Login</a>
             {% endif %}
             <button class="nav-toggle-btn" aria-label="Toggle menu" data-nav-toggler>
                 <ion-icon name="menu-outline" aria-hidden="true" class="menu-icon"></ion-icon>
@@ -70,7 +95,7 @@
 
 
                 <div class="hero-form-wrapper" id="search-result">
-                    <div class="form-tab">
+                    <div class="form-tab" id="login">
                         <button type="button" class="tab-btn" id="buy-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Buy</button>
                         <button type="button" class="tab-btn" id="sell-btn" onclick="document.getElementById('forms').style.display = 'block';" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Sell</button>
                         <button type="button" class="tab-btn" id="rent-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Rent</button>
@@ -379,14 +404,14 @@
                                         /* Responsive styles */
                                         @media (max-width: 768px) {
                                             .property-card {
-                                                max-width: 80%; /* Make the form width adapt to smaller screens */
+                                                max-width: 90%; /* Make the form width adapt to smaller screens */
                                             }
                                         }
                                     </style>
             
                                     <h2>Login</h2>
                                     <br><br>
-                                    <form method="post" action="{% url 'login' %}">
+                                    <form method="post">
                                         {% csrf_token %}
                                         <div style="display: flex; flex-direction: column; gap: 2rem;">
                                             {{ login_form.as_p }} <!-- Assuming 'login_form' is passed to the template -->
@@ -459,7 +484,7 @@
                                 
                                     /* Responsive styles */
                                     @media (max-width: 768px) {
-                                        .property-card {
+                                        #register-form {
                                             max-width: 90%; /* Make the form width adapt to smaller screens */
                                         }
                                     }
@@ -468,7 +493,7 @@
                                 <div class="form-container">
                                     <h2>Register</h2>
                                     <br><br>
-                                    <form method="post" action="{% url 'register' %}">
+                                    <form method="post">
                                         {% csrf_token %}
                                         <div style="display: flex; flex-direction: column; gap: 2rem;">
                                             {{ register_form.as_p }} <!-- Assuming 'register_form' is passed to the template -->
@@ -498,10 +523,50 @@
 
                         {% endif %}
                         <script>
+                            if (window.location.hash === '#login') {
+                                // Check if the elements exist before applying styles
+                                const loginForm = document.getElementById('login-form');
+                                if (loginForm) {
+                                    // Scroll to the login section smoothly
+                                    loginForm.scrollIntoView({ behavior: 'smooth' });
+                                    // Display the login form
+                                    loginForm.style.display = 'block';
+                                }
+
+                                // Set button colors and backgrounds if they exist
+                                const buyBtn = document.getElementById('buy-btn');
+                                const sellBtn = document.getElementById('sell-btn');
+                                const rentBtn = document.getElementById('rent-btn');
+
+                                if (buyBtn && sellBtn && rentBtn) {
+                                    buyBtn.style.color = 'black';
+                                    sellBtn.style.color = 'white';
+                                    rentBtn.style.color = 'black';
+                                    buyBtn.style.background = 'none';
+                                    sellBtn.style.background = '#007BFF';
+                                    rentBtn.style.background = 'none';
+                                }
+
+                                // Show and style the form with ID 'formsr'
+                                const formSr = document.getElementById('formsr');
+                                if (formSr) {
+                                    formSr.style.display = 'block';
+                                    formSr.style.zIndex = '2';
+                                    formSr.style.background = 'blue';  // Change to 'white' if preferred
+                                }
+
+                                // Optionally hide the search form
+                                const searchForm = document.getElementById('search-form');
+                                if (searchForm) {
+                                    searchForm.style.display = 'none';
+                                }
+                            }
+
                     
                             document.getElementById('buy-btn').addEventListener('click', function() {
                                 document.getElementById('sale_type').value = 'For Sale';
                                 document.getElementById('search-form').style.display = 'flex';
+                                document.getElementById('search-form').style.zIndex = 2;
                                 document.getElementById('formsr').style.display = 'none'; 
                                 document.getElementById('buy-btn').style.color = 'white';
                                 document.getElementById('sell-btn').style.color = 'black';
