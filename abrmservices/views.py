@@ -737,14 +737,13 @@ class ListingForm(forms.ModelForm):
     )
 
 from user.forms import RegisterForm, LoginForm
-from django.contrib import messages
-from .forms import RegisterForm
-from .models import User
+from user.models import UserAccount, UserAccountManager
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
-from django.shortcuts import redirect, render
-from .forms import LoginForm
+
 def housing(request):
+    
+    user = request.user
     no_results_message = ''
     form = SearchForm(request.POST or None)  # Use GET request to retrieve query parameters
     listings = Listing.objects.none() 
@@ -766,15 +765,15 @@ def housing(request):
             # Check if passwords match and meet length requirements
             if password == re_password and len(password) >= 8:
                 # Check if the email already exists in the database
-                if not User.objects.filter(email=email).exists():
+                if not UserAccount.objects.filter(email=email).exists():
                     # Determine if the user is a realtor or a regular user
                     if is_realtor:
-                        user = User.objects.create_realtor(name=name, email=email)
+                        user = UserAccount.objects.create_realtor(name=name, email=email)
                         user.set_password(password)
                         user.save()
                         messages.success(request, 'Realtor account created successfully')
                     else:
-                        user = User.objects.create_user(name=name, email=email)
+                        user = UserAccount.objects.create_user(name=name, email=email)
                         user.set_password(password)
                         user.save()
                         messages.success(request, 'User account created successfully')
@@ -835,12 +834,8 @@ def housing(request):
 
     if cform.is_valid():
         cform.save()
-        print(f"CForm: {cform}")
         return redirect('listings')  # Redirect to a view that lists all listings or a success page
-    else:
-        print(f"Form errors: {cform.errors}")
-        print(f"Form data: {request.POST}")
-        print(f"Form files: {request.FILES}")
+
 
 
 
@@ -878,7 +873,6 @@ def housing(request):
                 pass  # Ignore invalid bedroom inputs for filtering
 
         # Print the query details to the terminal for debugging
-        print(f"CForm: {cform}")
 
         # Execute query and get the filtered results
         listings = Listing.objects.filter(query).filter(is_published=True)  # Only show published listings
@@ -890,7 +884,7 @@ def housing(request):
 
         # return redirect('/housing/#search-result')
 
-
+    print(user.email)
     # Render the template with form and listings
     return render(request, 'index.html', {
         'form': form,
@@ -898,7 +892,8 @@ def housing(request):
         'register_form': register_form,
         'listings': listings,
         'no_results_message': no_results_message,
-        'cform': cform
+        'cform': cform,
+        'user' : user
     })
 
     

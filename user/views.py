@@ -127,3 +127,15 @@ class LogoutView(APIView):
             return Response({'success': 'Logged out successfully'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': f'Something went wrong: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
+
+@login_required
+def mydashboard(request):
+    user = request.user
+    if user.is_realtor or user.is_superuser:
+        return render(request, 'dashboard.html', {})
+    else:
+        return HttpResponseForbidden("You do not have permission to access this page.")

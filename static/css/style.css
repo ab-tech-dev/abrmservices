@@ -330,6 +330,9 @@ nav ul li:hover a {
   display: flex;
   gap: 2rem;
   opacity: 0;
+  animation: moveUp 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+  -webkit-font-smoothing: antialiased;
+  will-change: transform, opacity;
 }
 
 .lists {
@@ -511,21 +514,22 @@ a {
 }
 
 @keyframes moveUp {
-  0% {
+  /* 0% {
     opacity: 0;
-    transform: translatey(1.2rem);
+    transform: translateY(2rem);
   }
 
-  90% {
-    opacity: 0.5;
+  60% {
+    opacity: 0.6;
+    transform: translateY(0.6rem);
   }
 
   100% {
     opacity: 1;
-    transform: translatey(0rem);
-    -webkit-font-smoothing: antialiased;
-  }
+    transform: translateY(5rem);
+  } */
 }
+
 
 @keyframes appear {
   0% {
@@ -1212,15 +1216,51 @@ footer {
     gap: 1rem;
   }
 
-  .menu-bars {
-    align-items: center;
-    display: flex;
-  }
+/* Basic styling for the menu bars */
+.menu-bars {
+  width: fit-content;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+}
 
-  .menu-bars i {
-    font-size: 1.5rem;
-    cursor: pointer;
-  }
+.bar {
+  width: 80%;
+  height: 2.5px;
+  background-color: #333; /* Color of bars */
+  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+}
+
+.rotate-on-click .bar:nth-child(1) {
+  transform: rotate(45deg) translate(7px, 7px); /* Top bar to rotate */
+}
+
+.rotate-on-click .bar:nth-child(2) {
+  opacity: 0; /* Hide the middle bar */
+}
+
+.rotate-on-click .bar:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px); /* Bottom bar to rotate */
+}
+
+.reverse-rotate-on-click .bar:nth-child(1),
+.reverse-rotate-on-click .bar:nth-child(3) {
+  transform: rotate(0); /* Reset the rotation */
+  transform: translate(0, 0); /* Reset the translation */
+}
+
+.reverse-rotate-on-click .bar:nth-child(2) {
+  opacity: 1; /* Bring back the middle bar */
+}
+
+/* Optional: Add some spacing if necessary */
+
+
+.bar{
+  margin-top: 1.5px;
+}
 
   #close-menu {
     display: none;

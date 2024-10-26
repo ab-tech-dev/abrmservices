@@ -163,25 +163,23 @@ const swiper = new Swiper(".swiper", {
   }
 });
 
-const closeMenu = document.getElementById("close-menu");
-const openMenu = document.getElementById("open-menu");
+
+const menuBars = document.querySelector('.menu-bars');
 const lists = document.querySelector(".lists");
+menuBars.addEventListener('click', function() {
+  if (menuBars.classList.contains('rotate-on-click')) {
+    menuBars.classList.remove('rotate-on-click');
+    menuBars.classList.add('reverse-rotate-on-click');
+    lists.style.display = "flex";
+  } else {
+    menuBars.classList.remove('reverse-rotate-on-click');
+    menuBars.classList.add('rotate-on-click');
+    lists.style.display = "none";
+  }
+});
 
-openMenu.onclick = function () {
-  lists.style.display = "flex";
-  closeMenu.style.display = "flex";
-  closeMenu.style.animation = "rotatE 0.1s linear forwards";
-  openMenu.style.animation = "endrotatE 0.1s linear forwards";
-  openMenu.style.display = "none";
-};
 
-closeMenu.onclick = function () {
-  lists.style.display = "none";
-  closeMenu.style.display = "none";
-  openMenu.style.display = "flex";
-  openMenu.style.animation = "rotatE 0.1s linear forwards";
-  closeMenu.style.animation = "endrotatE 0.1s linear forwards";
-};
+
 
 var ani = document.querySelector(".sec");
 var page = document.querySelectorAll(".page");
@@ -203,7 +201,6 @@ window.onload = function () {
   icn1.style.animation = "moveRight 0.6s linear forwards";
   icn.style.animation = "moveRight 0.7s linear forwards";
   a.style.animation = "appear 2s linear forwards";
-  sep.style.animation = "moveUp 1.5s linear forwards";
   nav.style.animation = "delay 2s linear forwards";
 };
 
