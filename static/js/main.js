@@ -96,20 +96,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-document.addEventListener("click", function(event) {
-    const divs = document.querySelectorAll(".stop");
-    divs.forEach(div => {
-    // Check if the click is outside the div
-        if (!div.contains(event.target)) {
-            document.getElementById('buy-btn').style.color = 'black';
-            document.getElementById('sell-btn').style.color = 'black';
-            document.getElementById('rent-btn').style.color = 'black';
-            document.getElementById('buy-btn').style.background = 'none';
-            document.getElementById('sell-btn').style.background = 'none';
-            document.getElementById('rent-btn').style.background = 'none';
-            document.getElementById('formsr').style.display = 'none';
+// document.addEventListener("click", function(event) {
+//     const divs = document.querySelectorAll(".stop");
+//     divs.forEach(div => {
+//     // Check if the click is outside the div
+//         if (!div.contains(event.target)) {
+//             document.getElementById('buy-btn').style.color = 'black';
+//             document.getElementById('sell-btn').style.color = 'black';
+//             document.getElementById('rent-btn').style.color = 'black';
+//             document.getElementById('buy-btn').style.background = 'none';
+//             document.getElementById('sell-btn').style.background = 'none';
+//             document.getElementById('rent-btn').style.background = 'none';
+//             document.getElementById('formsr').style.display = 'none';
 
-            document.getElementById('search-form').style.display = 'none';  // Adjust this as needed
-        }
-    })
-});
+//             document.getElementById('search-form').style.display = 'none';  // Adjust this as needed
+//         }
+//     })
+// });
