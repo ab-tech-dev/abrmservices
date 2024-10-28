@@ -469,16 +469,27 @@ class SearchForm(forms.Form):
         ('estate_house', 'A house in an estate'),  # Added option
     ]
     
-    CATEGORY_CHOICES = [
-        ('500', '500'),
-        ('1000', '1000'),
-        ('2000', '2000'),
-        ('3000', '3000'),
-        ('4000', '4000'),
-        ('5000', '5000'),
-        ('6000', '6000'),
+    CATEGORY_CHOICESA = [
+        ('50000', '50000'),
+        ('100000', '100000'),
+        ('200000', '200000'),
+        ('300000', '300000'),
+        ('400000', '400000'),
+        ('500000', '500000'),
+        ('600000', '600000'),
     ]
 
+    CATEGORY_CHOICESB = [
+        ('500000', '500000'),
+        ('1000000', '1000000'),
+        ('5000000', '5000000'),
+        ('10000000', '10000000'),
+        ('50000000', '50000000'),
+        ('100000000', '100000000'),
+        ('1000000000', '1000000000'),
+        ('10000000000', '10000000000'),
+        ('100000000000', '100000000000'),
+    ]
     search = forms.CharField(
         label='Search: *',
         max_length=100,
@@ -507,13 +518,13 @@ class SearchForm(forms.Form):
 
     min_price = forms.ChoiceField(
         label='Min Price:',
-        choices= CATEGORY_CHOICES,
+        choices= CATEGORY_CHOICESA,
         widget=forms.Select(attrs={'class': 'dropdown-list'})
     )
 
     max_price = forms.ChoiceField(
         label='Max Price:',
-        choices=CATEGORY_CHOICES,
+        choices=CATEGORY_CHOICESB,
         widget=forms.Select(attrs={'class': 'dropdown-list'})
     )
 
@@ -752,7 +763,7 @@ def housing(request):
     listings = Listing.objects.none()
 
     # Forms
-    form = SearchForm(request.GET or None)
+    form = SearchForm(request.POST or None)
     cform = ListingForm(request.POST, request.FILES or None)
     register_form = RegisterForm(request.POST or None)
     login_form = LoginForm(request.POST or None)
@@ -816,51 +827,58 @@ def housing(request):
         messages.success(request, 'Listing saved successfully')
         return redirect('listings')  # Redirect to the listing page after saving
 
-    # Search Filter Process
-    if form.is_valid():
-        location = form.cleaned_data.get('location')
-        home_type = form.cleaned_data.get('category')
-        search_description = form.cleaned_data.get('search')
-        min_price = form.cleaned_data.get('min_price')
-        max_price = form.cleaned_data.get('max_price')
+    if form.is_valid():  # Only process if the form is valid
+        location = form.cleaned_data['location']
+        home_type = form.cleaned_data.get('category')  # Get the home type (category from form)
+        search_description = form.cleaned_data.get('search')  # Get the search field description
+        min_price = form.cleaned_data.get('min_price')  # Get the minimum price from form
+        max_price = form.cleaned_data.get('max_price')  # Get the maximum price from form
 
-        query = Q(is_published=True)
+        # Filtering based on optional fields in the model
+        query = Q()
+
         if location:
             query &= Q(location__icontains=location)
         if home_type:
-            query &= Q(home_type=home_type)
+            query &= Q(home_type=home_type)  # Match home_type in Listing model
         if search_description:
-            query |= Q(description__icontains=search_description)
+            query |= Q(description__icontains=search_description)  # Match description
         if min_price:
-            query |= Q(price__gte=min_price)
+            query &= Q(price__gte=int(min_price))  # price >= min_price
         if max_price:
-            query |= Q(price__lte=max_price)
+            query &= Q(price__lte=int(max_price))  # price <= max_price
 
-        sale_type = request.GET.get('sale_type')
-        bedrooms = request.GET.get('bedrooms')
-        
+        # Retrieve additional query parameters from the model's attributes
+        sale_type = request.POST.get('sale_type')  # Check for `sale_type` field in GET parameters
+        bedrooms = request.POST.get('bedrooms')  # Check for `bedrooms` field in GET parameters
+
         if sale_type:
-            query &= Q(sale_type=sale_type)
+            query &= Q(sale_type=sale_type)  # Filter by sale_type if provided
         if bedrooms:
             try:
-                query &= Q(bedrooms=int(bedrooms))
+                query &= Q(bedrooms=int(bedrooms))  # Convert to int and filter by number of bedrooms
             except ValueError:
-                pass
+                pass  # Ignore invalid bedroom inputs for filtering
 
-        listings = Listing.objects.filter(query)
+        # Print the query details to the terminal for debugging
+
+        # Execute query and get the filtered results
+        listings = Listing.objects.filter(query).filter(is_published=True)
+
+        # Set no_results_message if no listings found
         if not listings.exists():
             no_results_message = "No results found."
 
+    # Pass no_results_message to the template context
     return render(request, 'index.html', {
         'form': form,
         'login_form': login_form,
         'register_form': register_form,
         'listings': listings,
-        'no_results_message': no_results_message,
+        'no_results_message': no_results_message,  # Pass the message to the template
         'cform': cform,
         'is_logged_in': request.user.is_authenticated,  # Pass user authentication status
     })
-
 
 # from user.forms import RegisterForm, LoginForm
 # from user.models import UserAccount, UserAccountManager

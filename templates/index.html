@@ -16,7 +16,7 @@
 </head>
 <body>
     
-   <header class="header" data-header>
+   <header class="header stop" data-header>
         <div class="container">
             <a href="" class="logo">
                 <ion-icon name="home-outline"></ion-icon> Realestate
@@ -38,7 +38,7 @@
                     </li>
                     <li>
                         {% if is_logged_in %}
-                            <form method="POST" action="" class="navbar-link" data-nav-link>
+                            <form method="POST" action="{% url 'housing' %}" class="navbar-link" data-nav-link>
                                 {% csrf_token %}
                                 <button type="submit" class="" name="logout" style="color: #007BFF;">Logout</button>
                             </form>
@@ -78,6 +78,72 @@
 
    <!--======== main =========-->
    <main>
+        {% if messages %}
+            <style>
+                #toastBox {
+                    position: fixed;
+                    bottom: 30px;
+                    right: 30px;
+                    display: flex;
+                    align-items: flex-start;
+                    overflow: hidden;
+                    padding: 20px;
+                    transition: opacity 1s ease; /* Smooth fade-out */
+                }
+
+                .messages {
+                    width: fit-content;
+                    background: #fff;
+                    padding: 2rem;
+                    font-weight: 500;
+                    margin: 15px 0;
+                    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+                    display: flex;
+                    align-items: center;
+                    z-index: 100;
+                }
+
+                .messages p {
+                    align-items: flex-start;
+                }
+                .icon {
+                    font-size: 20px;
+                    margin-right: 10px;
+                }
+
+                .success-icon {
+                    color: green;
+                }
+
+                .error-icon {
+                    color: red;
+                }
+            </style>
+            <div class="messages" id="toastBox">
+                {% for message in messages %}
+                    {% if forloop.last %}
+                        {% if "success" in message.tags %}
+                            <ion-icon class="icon success-icon" name="checkmark-circle-outline"></ion-icon>
+                        {% elif "error" in message.tags %}
+                            <ion-icon class="icon error-icon" name="close-circle-outline"></ion-icon>
+                        {% endif %}
+                            <p {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <script>
+                // Hide the toastBox after 6 seconds
+                setTimeout(function() {
+                    const toastBox = document.getElementById('toastBox');
+                    if (toastBox) {
+                        toastBox.style.opacity = '0'; // Start fade-out effect
+                        setTimeout(() => toastBox.style.display = 'none', 1000); // Hide completely after 1s
+                    }
+                }, 6000);
+            </script>
+        {% endif %}
+
         <article class="article">
             <section class="section hero" aria-label="hero">
                 <div class="container">
@@ -94,15 +160,15 @@
                     </div>
 
 
-                <div class="hero-form-wrapper" id="search-result">
+                <div class="hero-form-wrapper stop" id="search-result">
                     <div class="form-tab" id="login">
                         <button type="button" class="tab-btn" id="buy-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Buy</button>
-                        <button type="button" class="tab-btn" id="sell-btn" onclick="document.getElementById('forms').style.display = 'block';" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Sell</button>
+                        <button type="button" class="tab-btn" id="sell-btn" onclick="document.getElementById('formsr').style.display = 'block';" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Sell</button>
                         <button type="button" class="tab-btn" id="rent-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Rent</button>
                     </div>
                     
                     <!-- Search Form -->
-                    <form method="post" class="hero-form" id="search-form" action="/housing/#search-result" style="display: none; position: absolute;">
+                    <form method="post" class="hero-form stop" id="search-form" action="/housing/#search-result" style="display: none; position: absolute;">
                         <style>
                             .hero-form {
                                 width: 100%; 
@@ -189,7 +255,7 @@
                         
                         <button type="submit" class="btn btn-primary">Search</button>
                     </form>
-                    <div id="formsr" style="display: none;">    
+                    <div id="formsr" class="stop" style="display: none;">    
                         {% if user.is_authenticated %}
                             <div id="realtor-form" class="property-card" style="background: white; z-index: 2; position: absolute; margin: auto; padding: 2rem; justify-content: space-between; gap: 5rem;">
                                 <style>
@@ -225,7 +291,7 @@
                                     }
                                 
                                     /* Style for error/success messages */
-                                    .messages {
+                                    /* .messages {
                                         list-style: none;
                                         padding: 0;
                                         margin: 0;
@@ -233,7 +299,7 @@
                                 
                                     .messages li {
                                         margin: 1rem 0;
-                                    }
+                                    } */
                                 
                                     /* Responsive styles */
                                     @media (max-width: 768px) {
@@ -391,7 +457,7 @@
                                         }
                                     
                                         /* Style for error/success messages */
-                                        .messages {
+                                        /* .messages {
                                             list-style: none;
                                             padding: 0;
                                             margin: 0;
@@ -399,7 +465,7 @@
                                     
                                         .messages li {
                                             margin: 1rem 0;
-                                        }
+                                        } */
                                     
                                         /* Responsive styles */
                                         @media (max-width: 768px) {
@@ -407,6 +473,7 @@
                                                 max-width: 90%; /* Make the form width adapt to smaller screens */
                                             }
                                         }
+
                                     </style>
             
                                     <h2>Login</h2>
@@ -422,13 +489,6 @@
                                         <p>New to ABRMS?</p>
                                         <br>
                                         <a href="#register" class="btn btn-secondary" onclick="toggleForms('register'); return false;">Register Here</a>
-                                        {% if messages %}
-                                            <ul class="messages">
-                                                {% for message in messages %}
-                                                <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
-                                                {% endfor %}
-                                            </ul>
-                                        {% endif %}
                                     </form>
                                 </div>
                             </div>
@@ -472,7 +532,7 @@
                                     }
                                 
                                     /* Style for error/success messages */
-                                    .messages {
+                                    /* .messages {
                                         list-style: none;
                                         padding: 0;
                                         margin: 0;
@@ -480,7 +540,7 @@
                                 
                                     .messages li {
                                         margin: 1rem 0;
-                                    }
+                                    } */
                                 
                                     /* Responsive styles */
                                     @media (max-width: 768px) {
@@ -562,7 +622,7 @@
                                 }
                             }
 
-                    
+                            
                             document.getElementById('buy-btn').addEventListener('click', function() {
                                 document.getElementById('sale_type').value = 'For Sale';
                                 document.getElementById('search-form').style.display = 'flex';
@@ -588,6 +648,34 @@
                                 document.getElementById('sell-btn').style.background = 'none';
                                 document.getElementById('rent-btn').style.background = '#007BFF';
                             });
+
+                            document.addEventListener("click", function(event) {
+                                const divs = document.querySelectorAll(".stop");
+                                const buyBtn = document.getElementById('buy-btn');
+                                const sellBtn = document.getElementById('sell-btn');
+                                const rentBtn = document.getElementById('rent-btn');
+                                const formsr = document.getElementById('formsr');
+                                const searchForm = document.getElementById('search-form');
+
+                                let clickInsideStopDiv = false;
+                                divs.forEach(div => {
+                                    if (div.contains(event.target)) {
+                                        clickInsideStopDiv = true;
+                                    }
+                                });
+
+                                if (!clickInsideStopDiv) {
+                                    buyBtn.style.color = 'black';
+                                    sellBtn.style.color = 'black';
+                                    rentBtn.style.color = 'black';
+                                    buyBtn.style.background = 'none';
+                                    sellBtn.style.background = 'none';
+                                    rentBtn.style.background = 'none';
+                                    formsr.style.display = 'none';
+                                    searchForm.style.display = 'none';
+                                }
+                            });
+
                         
                             document.getElementById('sell-btn').addEventListener('click', function() {
     
@@ -627,7 +715,7 @@
             </section>
                 {% if listings %}
                     <h2 style="margin: 1.5% 5%;">Search Results:</h2>
-                    <div class="property-list" style="padding: 0 5%;  margin-bottom: 2%;">
+                    <div class="property-list" style="padding: 0 5%;  margin-bottom: 2%; z-index: 2;">
                         {% for listing in listings %}
                             <div class="property-card">
                                 <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
@@ -683,7 +771,7 @@
                         <br>
                     </div>
                 {% else %}
-                <h2 style="margin: 1.5% 5%;">{{no_results_message}}</h2>
+                    <h2 style="margin: 1.5% 5%; z-index: 2;">{{ no_results_message }}</h2>
                 {% endif %}
             <section class="section about" id="about" aria-level="about">
                 <div class="container">
