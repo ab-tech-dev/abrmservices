@@ -113,3 +113,39 @@ document.addEventListener('DOMContentLoaded', function() {
 //         }
 //     })
 // });
+
+// Select the target element or a common parent to observe
+const targetNode = document.body;
+
+// Configuration for observing child list changes in the DOM
+const config = { childList: true, subtree: true };
+
+// Callback function to execute when mutations are observed
+const callback = (mutationsList, observer) => {
+    for (let mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+            // Check if there are new nodes
+            mutation.addedNodes.forEach((node) => {
+                // Check if the newly added node is the target container
+                if (node.nodeType === 1 && node.classList && node.classList.contains('pac-container') && node.classList.contains('hdpi')) {
+                    // Add 'stop' class to the node
+                    node.classList.add('stop');
+                    
+                    // Use setTimeout to allow rendering time and then find the dismissButton
+                    setTimeout(() => {
+                        const dismissButton = node.querySelector('.dismissButton');
+                        if (dismissButton) {
+                            dismissButton.classList.add('stop');
+                        }
+                    }, 0); // Set timeout to 0 for next event loop
+                }
+            });
+        }
+    }
+};
+
+// Create an observer instance linked to the callback function
+const observer = new MutationObserver(callback);
+
+// Start observing the target node for configured mutations
+observer.observe(targetNode, config);

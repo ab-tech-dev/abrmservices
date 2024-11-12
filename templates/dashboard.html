@@ -71,67 +71,53 @@
                         
                     </div>
         
-                    {% if listings %}
-                        <h2 style="margin: 1.5% 5%;">Your Listings:</h2>
-                        <div class="property-list" style="padding: 0 5%; margin-bottom: 2%;">
-                            {% for listing in listings %}
-                                <div class="property-card">
-                                    <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
-                                        <img src="{{ listing.main_photo.url }}" width="800px" height="533" loading="lazy" alt="{{ listing.title }}" class="img-cover">
-                                    </figure>
-                                    
-                                    <button class="card-action-btn" aria-label="add to favourite">
-                                        <ion-icon name="heart"></ion-icon>
-                                    </button>
-                                    
-                                    <div class="card-content">
-                                        <h3 class="h3">
-                                            <a href="{% url 'listing_detail' listing.slug %}" class="card-title">{{ listing.title }}</a>
-                                        </h3>
+                    <article>
+                        <h1>Your Listings</h1>
+                        {% if listings %}
+                            <ul>
+                                {% for listing in listings %}
+                                    <li>
+                                        <h2>{{ listing.title }}</h2>
+                                        <p>Location: {{ listing.location }}</p>
+                                        <p>Price: {{ listing.price }}</p>
+                                        <p>Bedrooms: {{ listing.bedrooms }}</p>
+                                        <p>Bathrooms: {{ listing.bathrooms }}</p>
+                                        <img src="{{ listing.main_photo.url }}" alt="{{ listing.title }}">
                                         
-                                        <ul class="card-list">
-                                            <li class="card-item">
-                                                <div class="item-icon">
-                                                    <ion-icon name="cube-outline"></ion-icon>
-                                                </div>
-                                                <span class="item-text">{{ listing.zipcode }}</span> <!-- Assuming the zip code stands for sqf -->
-                                            </li>
-                            
-                                            <li class="card-item">
-                                                <div class="item-icon">
-                                                    <ion-icon name="bed-outline"></ion-icon>
-                                                </div>
-                                                <span class="item-text">{{ listing.bedrooms }} Beds</span>
-                                            </li>
-                            
-                                            <li class="card-item">
-                                                <div class="item-icon">
-                                                    <ion-icon name="man-outline"></ion-icon>
-                                                </div>
-                                                <span class="item-text">{{ listing.bathrooms }} Baths</span>
-                                            </li>
-                                        </ul>
+                                        <!-- Edit Form -->
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="slug" value="{{ listing.slug }}">
+                                            <button type="submit" name="edit">Edit</button>
+                                        </form>
                                         
-                                        <div class="card-meta">
-                                            <div>
-                                                <span class="meta-title">Price</span>
-                                                <span class="meta-text">${{ listing.price }}</span>
-                                            </div>
-                            
-                                            <div>
-                                                <span class="meta-title">Sale Type</span>
-                                                <span class="meta-text">{{ listing.sale_type }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                            <br>
-                        </div>
-                    {% else %}
-                        <h2 style="margin: 1.5% 5%;">{{ no_results_message }}</h2>
-                    {% endif %}
-            </section>
+                                        <!-- Delete Form -->
+                                        <form method="POST" onsubmit="return confirm('Are you sure you want to delete this listing?');">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="slug" value="{{ listing.slug }}">
+                                            <button type="submit" name="delete" class="delete-button">Delete</button>
+                                        </form>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="no-listings">You have no listings.</p>
+                        {% endif %}
+                    
+                        {% if editing %}
+                            <div class="form-container">
+                                <h2>Edit Listing</h2>
+                                <br>
+                                <form method="POST" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    {{ form.as_p }}  <!-- This will render the form fields -->
+                    
+                                    <button type="submit" class="btn btn-primary">Update</button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </article>
+                </div>   
         
             <!-- You can leave the rest of the sections as-is if they are static -->
             <section class="section about" id="about" aria-label="about">

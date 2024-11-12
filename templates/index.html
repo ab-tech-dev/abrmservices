@@ -163,7 +163,7 @@
                 <div class="hero-form-wrapper stop" id="search-result">
                     <div class="form-tab" id="login">
                         <button type="button" class="tab-btn" id="buy-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Buy</button>
-                        <button type="button" class="tab-btn" id="sell-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Sell</button>
+                        <a href="#login"><button type="button" class="tab-btn" id="sell-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Sell</button></a>
                         <button type="button" class="tab-btn" id="rent-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Rent</button>
                     </div>
                     
@@ -212,7 +212,11 @@
                                     max-width: 90%; /* Ensure no overflow on smaller screens */
                                     padding: 1.5rem; /* Keep padding but adapt to smaller screens */
                                 }
-                        
+                                
+                                .strt {
+                                    display: block;
+                                }
+
                                 .input-wrapper, .btn-primary {
                                     width: 100%; /* Full width for inputs and button */
                                 }
@@ -233,7 +237,7 @@
                             <ion-icon name="search-outline"></ion-icon>
                         </div>
                     
-                        <div class="input-wrapper">
+                        <div class="input-wrapper stop">
                             {{ form.location.label_tag }}
                             {{ form.location }}
                         </div>
@@ -284,6 +288,10 @@
                                         background-color: #007BFF;
                                         color: white;
                                     }
+
+                                    .strt{
+                                        display: flex;
+                                    }
                                 
                                     .btn-secondary {
                                         background-color: #6c757d;
@@ -306,6 +314,9 @@
                                         #realtor-form {
                                             max-width: 90%; /* Make the form width adapt to smaller screens */
                                         }
+                                        .strt {
+                                            display: block;
+                                        }
                                     }
                                 </style>
 
@@ -317,7 +328,7 @@
                                         {% csrf_token %}
 
                                         <!-- Realtor Email Field -->
-                                        <div style="display: flex; gap: 2rem;">
+                                        <div class="strt" style="gap: 2rem;">
                                             <div class="row-container">
                                                 <label for="{{ cform.realtor.id_for_label }}">Realtor Email:</label>
                                                 {{ cform.realtor }}
@@ -329,7 +340,7 @@
                                         </div>
 
                                         <!-- Slug and Location Fields -->
-                                        <div style="display: flex; gap: 2rem;">
+                                        <div class="strt" style="gap: 2rem;">
                                             <div class="row-container">
                                                 <label for="{{ cform.slug.id_for_label }}">Slug:</label>
                                                 {{ cform.slug }}
@@ -341,7 +352,7 @@
                                         </div>
 
                                         <!-- Zip Code and Description Fields -->
-                                        <div style="display: flex; gap: 2rem;">
+                                        <div class="strt" style="gap: 2rem;">
                                             <div class="row-container">
                                                 <label for="{{ cform.zipcode.id_for_label }}">Zip Code:</label>
                                                 {{ cform.zipcode }}
@@ -353,7 +364,7 @@
                                         </div>
 
                                         <!-- Price and Bedrooms Fields -->
-                                        <div style="display: flex; gap: 2rem;">
+                                        <div class="strt" style="gap: 2rem;">
                                             <div class="row-container">
                                                 <label for="{{ cform.price.id_for_label }}">Price:</label>
                                                 {{ cform.price }}
@@ -365,7 +376,8 @@
                                         </div>
 
                                         <!-- Bathrooms and Sale Type Fields -->
-                                        <div style="display: flex; gap: 2rem;">
+                                        <div class="strt" style="gap: 2rem;">
+
                                             <div class="row-container">
                                                 <label for="{{ cform.bathrooms.id_for_label }}">Bathrooms:</label>
                                                 {{ cform.bathrooms }}
@@ -635,6 +647,8 @@
                                 document.getElementById('sell-btn').style.background = 'none';
                                 document.getElementById('rent-btn').style.background = 'none';
                             });
+                            // Target element selector
+
                         
                             document.getElementById('rent-btn').addEventListener('click', function() {
                                 document.getElementById('sale_type').value = 'For Rent';

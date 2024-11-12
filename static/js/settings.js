@@ -1,3 +1,105 @@
+// const closeMenu = document.getElementById("close-menu");
+// const openMenu = document.getElementById("open-menu");
+// const lists = document.querySelector(".lists");
+
+// openMenu.onclick = function () {
+//   lists.style.display = "flex";
+//   closeMenu.style.display = "flex";
+//   closeMenu.style.animation = "rotatE 0.1s linear forwards";
+//   openMenu.style.animation = "endrotatE 0.1s linear forwards";
+//   openMenu.style.display = "none";
+// };
+
+// closeMenu.onclick = function () {
+//   lists.style.display = "none";
+//   closeMenu.style.display = "none";
+//   openMenu.style.display = "flex";
+//   openMenu.style.animation = "rotatE 0.1s linear forwards";
+//   closeMenu.style.animation = "endrotatE 0.1s linear forwards";
+// };
+
+
+// var icn = document.querySelector(".icn");
+// var icn1 = document.querySelector(".icn1");
+// var icn2 = document.querySelector(".icn2");
+// var a = document.querySelector(".a");
+// var sep = document.querySelector(".sep");
+// var nav = document.querySelector("nav");
+
+// window.onload = function () {
+//   icn2.style.animation = "moveRight 0.5s linear forwards";
+//   icn1.style.animation = "moveRight 0.6s linear forwards";
+//   icn.style.animation = "moveRight 0.7s linear forwards";
+//   a.style.animation = "appear 2s linear forwards";
+//   sep.style.animation = "moveUp 1.5s linear forwards";
+//   nav.style.animation = "delay 2s linear forwards";
+// };
+// const swiper = new Swiper(".swiper", {
+//   // Optional parameters
+//   autoplay: {
+//     delay: 4000
+//   },
+
+//   direction: "horizontal",
+//   loop: true,
+//   effect: "coverflow",
+//   grabCursor: false,
+//   centeredSlides: true,
+//   coverflowEffect: {
+//     rotate: 0,
+//     stretch: 0,
+//     depth: 100,
+//     modifier: 2
+//   },
+
+//   breakpoints: {
+//     0: {
+//       slidesPerView: 1,
+//       centeredSlides: false,
+
+//       autoplay: {
+//         delay: 4000
+//       }
+//     },
+
+//     600: {
+//       slidesPerView: 3,
+//       direction: "horizontal",
+//       loop: true,
+//       effect: "coverflow",
+//       grabCursor: false,
+//       centeredSlides: true,
+//       coverflowEffect: {
+//         rotate: 0,
+//         stretch: 0,
+//         depth: 100,
+//         modifier: 2
+//       },
+//       autoplay: {
+//         delay: 4000
+//       }
+//     },
+
+//     1200: {
+//       slidesPerView: 5,
+//       direction: "horizontal",
+//       loop: true,
+//       effect: "coverflow",
+//       grabCursor: false,
+//       centeredSlides: true,
+//       coverflowEffect: {
+//         rotate: 0,
+//         stretch: 0,
+//         depth: 100,
+//         modifier: 2
+//       },
+//       autoplay: {
+//         delay: 4000
+//       }
+//     }
+//   }
+// });
+
 var form1 = document.querySelectorAll(".Form1");
 var form2 = document.querySelectorAll(".Form2");
 var form3 = document.querySelectorAll(".Form3");
@@ -163,23 +265,25 @@ const swiper = new Swiper(".swiper", {
   }
 });
 
-
-const menuBars = document.querySelector('.menu-bars');
+const closeMenu = document.getElementById("close-menu");
+const openMenu = document.getElementById("open-menu");
 const lists = document.querySelector(".lists");
-menuBars.addEventListener('click', function() {
-  if (menuBars.classList.contains('rotate-on-click')) {
-    menuBars.classList.remove('rotate-on-click');
-    menuBars.classList.add('reverse-rotate-on-click');
-    lists.style.display = "flex";
-  } else {
-    menuBars.classList.remove('reverse-rotate-on-click');
-    menuBars.classList.add('rotate-on-click');
-    lists.style.display = "none";
-  }
-});
 
+openMenu.onclick = function () {
+  lists.style.display = "flex";
+  closeMenu.style.display = "flex";
+  closeMenu.style.animation = "rotatE 0.1s linear forwards";
+  openMenu.style.animation = "endrotatE 0.1s linear forwards";
+  openMenu.style.display = "none";
+};
 
-
+closeMenu.onclick = function () {
+  lists.style.display = "none";
+  closeMenu.style.display = "none";
+  openMenu.style.display = "flex";
+  openMenu.style.animation = "rotatE 0.1s linear forwards";
+  closeMenu.style.animation = "endrotatE 0.1s linear forwards";
+};
 
 var ani = document.querySelector(".sec");
 var page = document.querySelectorAll(".page");
@@ -201,27 +305,6 @@ window.onload = function () {
   icn1.style.animation = "moveRight 0.6s linear forwards";
   icn.style.animation = "moveRight 0.7s linear forwards";
   a.style.animation = "appear 2s linear forwards";
+  sep.style.animation = "moveUp 1.5s linear forwards";
   nav.style.animation = "delay 2s linear forwards";
 };
-
-
-// static/contact/script.js
-document.getElementById('contact-form').addEventListener('submit', function(event) {
-  event.preventDefault(); // Prevent the default form submission behavior
-
-  emailjs.sendForm('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', this)
-      .then(function() {
-          alert('SUCCESS!'); // Display success message
-      }, function(error) {
-          alert('FAILED...', error); // Display error message
-      });
-});
-
-
-function initialize() {
-  // Initialize the Google Places Autocomplete for the location field
-  const locationInput = new google.maps.places.Autocomplete(document.getElementById('location'));
-}
-
-// Load the autocomplete function on window load
-google.maps.event.addDomListener(window, 'load', initialize);

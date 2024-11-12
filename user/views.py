@@ -132,10 +132,41 @@ class LogoutView(APIView):
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponseForbidden
+from django.contrib.auth.decorators import login_required
+from abrmservices.models import Listing
+from abrmservices.views import ListingForm  # Make sure to import your form class
+
 @login_required
 def mydashboard(request):
     user = request.user
     if user.is_realtor or user.is_superuser:
-        return render(request, 'dashboard.html', {})
+        # Retrieve listings for the logged-in user
+        listings = Listing.objects.filter(realtor=user.email)
+
+        if request.method == 'POST':
+            if 'edit' in request.POST:
+                # Get the slug from the form
+                slug = request.POST.get('slug')
+                listing = get_object_or_404(Listing, slug=slug)
+
+                # Create a form instance with the current listing data
+                if request.method == 'POST':
+                    form = ListingForm(request.POST, request.FILES, instance=listing)
+                    if form.is_valid():
+                        form.save()  # Save the updated listing
+                        return redirect('mydashboard')  # Redirect to dashboard after saving
+
+                # Render the edit form with existing data
+                return render(request, 'dashboard.html', {
+                    'listings': listings,
+                    'form': ListingForm(instance=listing),
+                    'editing': True,  # Flag to indicate we are editing
+                    'current_listing': listing  # Pass the listing being edited
+                })
+
+        return render(request, 'dashboard.html', {'listings': listings})
+
     else:
         return HttpResponseForbidden("You do not have permission to access this page.")

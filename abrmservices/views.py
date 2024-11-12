@@ -506,7 +506,7 @@ class SearchForm(forms.Form):
         widget=forms.TextInput(attrs={
             'id': 'id_location',
             'placeholder': 'Enter a location',
-            'class': 'input-field'
+            'class': 'input-field stop'
         })
     )
 
@@ -594,7 +594,7 @@ class ListingForm(forms.ModelForm):
         max_length=255,
         widget=forms.TextInput(attrs={
             'placeholder': 'Enter Location',
-            'class': 'form-control',
+            'class': 'form-control stop',
             'id': 'id_location',
             'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
         })

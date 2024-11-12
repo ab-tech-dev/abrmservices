@@ -33,6 +33,16 @@
         <div class="sep">
             <ul class="lists">
                 <li class="listsa"><a href="/">HOME</a></li>
+                <li class="listsa"><a href="/housing">HOUSING</a><i class="uil uil-angle-down"></i>
+                    <div class="sub__list">
+                        <ul>
+                            <li><a href="/housing">Buy a Property</a></li>
+                            <li><a href="/housing#login">Sell a Property</a></li>
+                            <li><a href="/housing">Rent a Property</a></li>
+                        </ul>
+                    </div> 
+                    
+                </li>
                 <li class="listsa"><a href="/relocation">RELOCATION</a><i class="uil uil-angle-down"></i>
                     <div class="sub__list">
                         <ul>
@@ -53,7 +63,6 @@
                         </ul>
                    </div>
                 </li>
-                <li class="listsa"><a href="/contact"><font color="red">CONTACT</font></a></li>
                 <li class="listsa"><a href="/about">ABOUT</a></li>
             </ul>
             <div class="menu-bars">
@@ -73,6 +82,27 @@
     </div>
 
     <div class="wrapper">
+        <style>
+            .wrapper{
+                align-items: center;
+                display: flex;
+                gap: 0;
+                justify-content: space-evenly;
+            }
+
+            .page{
+                margin: 6rem 3rem 2rem 2rem;
+            }
+
+            @media (max-width: 964px) {
+                .wrapper{
+                display: block;
+                }
+                .page{
+                    margin: 5% auto ;
+                }
+            }
+        </style>
         <div class="no1" style="padding: 2rem;">
             <div style="margin-top: 6rem; line-height: 2rem;">
                 <h1 style="margin-bottom: 2rem;">Contact Us</h1>
@@ -141,9 +171,9 @@
                             </div>                      
                         </div>
                         <div class="form__div">
-                            <div class="sub-div">
+                            <div class="sub-div" style="width: 100%;">
                                 <h4> Enter Information Here</h4>
-                                <textarea name="Ctext_area" placeholder="Write your message here!"></textarea>
+                                <textarea name="Ctext_area" placeholder="Write your message here!" style="width: 100%"></textarea>
                             </div>
                  
                         </div>

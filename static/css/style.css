@@ -329,10 +329,11 @@ nav ul li:hover a {
 .sep {
   display: flex;
   gap: 2rem;
+  z-index: 2;
   opacity: 0;
-  animation: moveUp 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+  /* animation: moveUp 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; */
   -webkit-font-smoothing: antialiased;
-  will-change: transform, opacity;
+  /* will-change: transform, opacity; */
 }
 
 .lists {
@@ -411,21 +412,23 @@ a {
 .section__1 {
   display: grid;
   grid-template-columns: 1.3fr 0.7fr;
-  justify-content: space-between;
+  justify-content: space-evenly;
   align-items: center;
   margin-top: 3rem;
   gap: 2rem;
   width: 100%;
-  height: 95vh;
+  height: 85vh;
   overflow: hidden;
   position: relative;
 }
 
+
+
 .imageDiv {
-  margin-top: 1rem;
+  margin: 0;
   position: absolute;
   width: 100%;
-  height: 97%;
+  height: 100%;
   background-position: center;
   background-size: cover;
 }
@@ -469,7 +472,12 @@ a {
 .section__1 .sec {
   color: white;
   padding-left: 2rem;
+  place-items: center;
   /* margin-top: -5rem; */
+}
+
+.section__1 .page {
+  place-items: center;
 }
 
 .form__div {
@@ -514,7 +522,7 @@ a {
 }
 
 @keyframes moveUp {
-  /* 0% {
+  0% {
     opacity: 0;
     transform: translateY(2rem);
   }
@@ -526,8 +534,8 @@ a {
 
   100% {
     opacity: 1;
-    transform: translateY(5rem);
-  } */
+    transform: translateY(0rem);
+  }
 }
 
 
@@ -636,6 +644,7 @@ form {
 
 .section__2 {
   width: 100%;
+  padding: 2rem 5rem;
 }
 
 .backHover {
@@ -1127,12 +1136,15 @@ footer {
   font-size: 14px;
   padding: 3rem 4rem;
 }
+@media screen and ( max-width: 100010px) {.section2__a{padding-left:  8rem; padding-top: 2rem;} .backHover{padding-left: 8rem; padding-top: 2rem; padding-bottom: 2rem;}} @media screen and (max-width: 1000px) { .section2__a{padding: 2rem 2rem; margin-top: 0rem;} .backHover{padding-left: 2rem;}
+} 
 
 @media screen and (max-width: 1024px) {
   .section__4 {
     margin: 0;
     display: block;
   }
+
 
   @keyframes rotatE {
     0% {
@@ -1381,6 +1393,7 @@ footer {
   }
 
   .section__1 {
+    height: 90vh;
     gap: 1rem;
   }
 }
@@ -1392,7 +1405,8 @@ footer {
   }
 
   .section__1 {
-    padding-top: 9rem;
+    height: 90vh;
+    padding-top: 8rem;
     grid-template-columns: 1fr;
   }
   .section__1 .page {
@@ -1424,8 +1438,7 @@ footer {
     grid-template-columns: 1fr;
     padding: 8rem 8rem 0 2rem;
     width: 100%;
-    height: fit-content;
-    box-shadow: 0 0 20vh;
+    height: 90vh;
   }
 }
 
@@ -1498,15 +1511,15 @@ footer {
   .section__1 {
     grid-template-columns: 1fr;
     padding: 1rem;
+    height: 97vh;
     width: 100%;
     height: fit-content;
     align-items: center;
-    box-shadow: 0 0 20vh;
   }
 
   .section__2 .page {
     display: block;
-    margin-top: 2rem;
+    margin-top: 0rem;
   }
 
   .sec {
