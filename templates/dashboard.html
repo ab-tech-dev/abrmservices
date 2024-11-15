@@ -51,88 +51,806 @@
 
    <!--======== main =========-->
    <main>
+    {% if messages %}
+        <style>
+            #toastBox {
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                display: flex;
+                align-items: flex-start;
+                overflow: hidden;
+                padding: 20px;
+                transition: opacity 1s ease; /* Smooth fade-out */
+            }
+
+            .messages {
+                width: fit-content;
+                background: #fff;
+                padding: 2rem;
+                font-weight: 500;
+                margin: 15px 0;
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+                display: flex;
+                align-items: center;
+                z-index: 100;
+            }
+
+            .messages p {
+                align-items: flex-start;
+            }
+            .icon {
+                font-size: 20px;
+                margin-right: 10px;
+            }
+
+            .success-icon {
+                color: green;
+            }
+
+            .error-icon {
+                color: red;
+            }
+        </style>
+        <div class="messages" id="toastBox">
+            {% for message in messages %}
+                {% if forloop.last %}
+                    {% if "success" in message.tags %}
+                        <ion-icon class="icon success-icon" name="checkmark-circle-outline"></ion-icon>
+                    {% elif "error" in message.tags %}
+                        <ion-icon class="icon error-icon" name="close-circle-outline"></ion-icon>
+                    {% endif %}
+                        <p {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <script>
+            // Hide the toastBox after 6 seconds
+            setTimeout(function() {
+                const toastBox = document.getElementById('toastBox');
+                if (toastBox) {
+                    toastBox.style.opacity = '0'; // Start fade-out effect
+                    setTimeout(() => toastBox.style.display = 'none', 1000); // Hide completely after 1s
+                }
+            }, 6000);
+        </script>
+    {% endif %}
+
+
         <article class="article">
             <section class="section hero" aria-label="hero">
                 <div class="container">
                     <div class="hero-bg">
                         <div class="hero-content">
                             <h1 class="h1 hero-title">
-                                Welcome back, {{ user.first_name }}!
+                                Welcome back, {{ user.name }}!
                             </h1>
                         
-                            <p class="hero-text">
+                            <p class="hero-text" style="color: rgb(203, 203, 201);">
                                 You currently have {{ listings.count }} active listings. Manage your properties and keep track of potential buyers.
                             </p>
-                        
-                            <p class="hero-text">
+                            <br>
+                            <p class="hero-text" style="color: rgb(203, 203, 201);">
                                 Ready to add new listings or update existing ones? We're here to help you connect buyers with their dream homes.
                             </p>
+                            <div id="searchListing"></div>
+                            <div id="createListing"></div>
                         </div>
                         
                     </div>
-        
-                    <article>
-                        <h1>Your Listings</h1>
-                        {% if listings %}
-                            <ul>
-                                {% for listing in listings %}
-                                    <li>
-                                        <h2>{{ listing.title }}</h2>
-                                        <p>Location: {{ listing.location }}</p>
-                                        <p>Price: {{ listing.price }}</p>
-                                        <p>Bedrooms: {{ listing.bedrooms }}</p>
-                                        <p>Bathrooms: {{ listing.bathrooms }}</p>
-                                        <img src="{{ listing.main_photo.url }}" alt="{{ listing.title }}">
-                                        
-                                        <!-- Edit Form -->
-                                        <form method="POST">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="slug" value="{{ listing.slug }}">
-                                            <button type="submit" name="edit">Edit</button>
-                                        </form>
-                                        
-                                        <!-- Delete Form -->
-                                        <form method="POST" onsubmit="return confirm('Are you sure you want to delete this listing?');">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="slug" value="{{ listing.slug }}">
-                                            <button type="submit" name="delete" class="delete-button">Delete</button>
-                                        </form>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p class="no-listings">You have no listings.</p>
-                        {% endif %}
+                </div>
+                <div class="hero-form-wrapper stop" id="search-result">
+                    <div class="form-tab" style="position: relative;">
+                        <a href="#searchListing"><button type="button" class="tab-btn" id="buy-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Search</button></a>
+                        <a href="#createListing"><button type="button" class="tab-btn" id="sell-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Add Listing</button></a>
+                    </div>
                     
-                        {% if editing %}
+                    <!-- Search Form -->
+                    <form method="post" class="hero-form stop" id="search-form" action="/dashboard/#search-result" style="display: none; position: absolute;">
+                        <style>
+                            .hero-form {
+                                width: 100%; 
+                                max-width: 800px; /* Keep max-width for larger screens */
+                                padding: 1.5rem;
+                                background-color: #fff;
+                                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+                                border-radius: 8px;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 1.5rem;
+                            }
+                        
+                            .input-wrapper {
+                                display: flex;
+                                flex-direction: column; /* Ensure inputs are stacked */
+                                width: 100%; /* Full width */
+                                gap: 0.5rem;
+                            }
+                        
+                            .input-wrapper input, .input-wrapper select {
+                                width: 100%; /* Full width for input fields */
+                                padding: 0.75rem;
+                                border: 1px solid #ced4da;
+                                border-radius: 4px;
+                            }
+                        
+                            .btn-primary {
+                                padding: 1rem;
+                                background-color: #007BFF;
+                                color: white;
+                                border: none;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                width: 100%; /* Full-width button */
+                            }
+                        
+                            /* Responsive styling for smaller screens */
+                            @media (max-width: 768px) {
+                                .hero-form {
+                                    max-width: 98%; /* Ensure no overflow on smaller screens */
+                                    padding: 1.5rem; /* Keep padding but adapt to smaller screens */
+                                }
+                                
+                                .strt {
+                                    display: block;
+                                }
+
+                                .input-wrapper, .btn-primary {
+                                    width: 100%; /* Full width for inputs and button */
+                                }
+                        
+                                /* Space out elements on smaller screens */
+                                .input-wrapper input, .input-wrapper select, .btn-primary {
+                                    margin-bottom: 1rem; /* Space between form elements */
+                                }
+                            }
+                        </style>
+                        
+                        {% csrf_token %}
+                        <input type="hidden" name="sale_type" id="sale_type" value="">
+                    
+                        <div class="input-wrapper">
+                            {{ form.search.label_tag }}
+                            {{ form.search }}
+                            <ion-icon name="search-outline"></ion-icon>
+                        </div>
+                    
+                        <div class="input-wrapper stop">
+                            {{ form.location.label_tag }}
+                            {{ form.location }}
+                        </div>
+                    
+                        <div class="input-wrapper">
+                            {{ form.category.label_tag }}
+                            {{ form.category }}
+                        </div>
+                    
+                        <div class="input-wrapper">
+                            {{ form.min_price.label_tag }}
+                            {{ form.min_price }}
+                        </div>
+                    
+                        <div class="input-wrapper">
+                            {{ form.max_price.label_tag }}
+                            {{ form.max_price }}
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </form>
+                    <div id="formsr" class="stop" style="display: none;">    
+                        <div id="realtor-form" class="property-card" style="background: white; z-index: 10; position: absolute; margin: auto; padding: 2rem; justify-content: space-between; gap: 5rem;">
+                            <style>
+                                #realtor-form {
+                                    width: 100%; /* Full width */
+                                    max-width: 500px; /* Prevents it from being too wide on large screens */
+                                    min-width: 300px; /* Ensures it doesn't get too narrow */
+                                    margin: 2rem auto; /* Center the form and add space above and below */
+                                    padding: 2rem;
+                                    display: flex;
+                                    flex-direction: column;
+                                    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow for aesthetics *//* Rounded corners */
+                                }
+                            
+                                /* Style for buttons */
+                                .btn {
+                                    width: 100%; /* Make the buttons stretch across the form */
+                                    padding: 1rem;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                }
+                            
+                                /* Style for primary and secondary buttons */
+                                .btn-primary {
+                                    background-color: #007BFF;
+                                    color: white;
+                                }
+
+                                .strt{
+                                    display: block;
+                                }
+                            
+                                .btn-secondary {
+                                    background-color: #6c757d;
+                                    color: white;
+                                }
+                            
+                                /* Style for error/success messages */
+                                /* .messages {
+                                    list-style: none;
+                                    padding: 0;
+                                    margin: 0;
+                                }
+                            
+                                .messages li {
+                                    margin: 1rem 0;
+                                } */
+                            
+                                /* Responsive styles */
+                                @media (max-width: 768px) {
+                                    #realtor-form {
+                                        max-width: 98%; /* Make the form width adapt to smaller screens */
+                                    }
+                                    .strt {
+                                        display: block;
+                                    }
+                                }
+                            </style>
+
                             <div class="form-container">
-                                <h2>Edit Listing</h2>
-                                <br>
+                                <h2>Create Listing</h2>
+                                <br><br>
                                 <form method="POST" enctype="multipart/form-data">
                                     {% csrf_token %}
-                                    {{ form.as_p }}  <!-- This will render the form fields -->
-                    
-                                    <button type="submit" class="btn btn-primary">Update</button>
+                                    
+                                    <!-- Part 1 -->
+                                    <div id="form-part-1" class="form-part">
+                                        <!-- Realtor Email Field -->
+                                        <div class="strt" style="gap: 2rem;">
+                                            <div class="row-container">
+                                                <label for="{{ cform.realtor.id_for_label }}">Realtor Email:</label>
+                                                <p>{{ cform.realtor.value }}</p> <!-- Display only -->
+                                                {{ cform.realtor.as_hidden }}     <!-- Hidden input to hold the value -->
+                                            </div>
+                                            <div class="row-container">
+                                                <label for="{{ cform.title.id_for_label }}">Title:</label>
+                                                {{ cform.title }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Slug and Location Fields -->
+                                        <div class="strt" style="gap: 2rem;">
+                                            <div class="row-container">
+                                                <label for="{{ cform.slug.id_for_label }}">Slug:</label>
+                                                {{ cform.slug }}
+                                            </div>
+                                            <div class="row-container">
+                                                <label for="{{ cform.location.id_for_label }}">Location:</label>
+                                                {{ cform.location }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Zip Code and Description Fields -->
+                                        <div class="strt" style="gap: 2rem;">
+                                            <div class="row-container">
+                                                <label for="{{ cform.zipcode.id_for_label }}">Zip Code:</label>
+                                                {{ cform.zipcode }}
+                                            </div>
+                                            <div class="row-container">
+                                                <label for="{{ cform.description.id_for_label }}">Description:</label>
+                                                {{ cform.description }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Price Field -->
+                                        <div class="row-container">
+                                            <label for="{{ cform.price.id_for_label }}">Price:</label>
+                                            {{ cform.price }}
+                                        </div>
+
+                                        <!-- Button to Navigate to Part 2 -->
+                                        <button type="button" class="btn btn-primary" onclick="showFormPart(2)">Next</button>
+                                    </div>
+
+                                    <!-- Part 2 -->
+                                    <div id="form-part-2" class="form-part" style="display: none;">
+                                        <!-- Bedrooms and Bathrooms Fields -->
+                                        <div class="strt" style="gap: 2rem;">
+                                            <div class="row-container">
+                                                <label for="{{ cform.bedrooms.id_for_label }}">Bedrooms:</label>
+                                                {{ cform.bedrooms }}
+                                            </div>
+                                            <div class="row-container">
+                                                <label for="{{ cform.bathrooms.id_for_label }}">Bathrooms:</label>
+                                                {{ cform.bathrooms }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Sale Type and Home Type Fields -->
+                                        <div class="strt" style="gap: 2rem;">
+                                            <div class="row-container">
+                                                <label for="{{ cform.sale_type.id_for_label }}">Sale Type:</label>
+                                                {{ cform.sale_type }}
+                                            </div>
+                                            <div class="row-container">
+                                                <label for="{{ cform.home_type.id_for_label }}">Home Type:</label>
+                                                {{ cform.home_type }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Photos Fields -->
+                                        <div class="row-container">
+                                            <label for="{{ cform.main_photo.id_for_label }}">Main Photo:</label>
+                                            {{ cform.main_photo }}
+                                        </div>
+                                        <div class="row-container">
+                                            <label for="{{ cform.photo_1.id_for_label }}">Photo 1:</label>
+                                            {{ cform.photo_1 }}
+                                        </div>
+                                        <div class="row-container">
+                                            <label for="{{ cform.photo_2.id_for_label }}">Photo 2:</label>
+                                            {{ cform.photo_2 }}
+                                        </div>
+                                        <div class="row-container">
+                                            <label for="{{ cform.photo_3.id_for_label }}">Photo 3:</label>
+                                            {{ cform.photo_3 }}
+                                        </div>
+
+                                        <!-- Is Published and Date Created Fields -->
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <div class="row-container" style="left: 0; display: flex;">
+                                                <label for="{{ cform.is_published.id_for_label }}">Is Published?</label>
+                                                {{ cform.is_published }}
+                                            </div>
+                                            <div class="row-container" style="right: 0;">
+                                                <label for="{{ cform.date_created.id_for_label }}">Date Created:</label>
+                                                {{ cform.date_created }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Navigation Buttons -->
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <button type="button" class="btn btn-secondary" onclick="showFormPart(1)">Back</button>
+                                            <button type="submit" class="btn btn-primary">Submit</button>
+                                        </div>
+                                    </div>
                                 </form>
                             </div>
-                        {% endif %}
-                    </article>
-                </div>   
-        
-            <!-- You can leave the rest of the sections as-is if they are static -->
-            <section class="section about" id="about" aria-label="about">
-                <div class="container">
-                    <div class="about-banner img-holder" style="--width: 600; --height: 700;">
-                        <img src="{% static 'images/abt-banner.jpg' %}" width="600px" height="700px" loading="lazy" alt="" class="img-cover">
-        
-                        <button class="play-btn" aria-label="play video">
-                            <ion-icon name="play" aria-hidden="true"></ion-icon>
-                        </button>
+
+                        <script>
+
+                            function showFormPart(part) {
+                                // Hide all form parts
+                                const parts = document.querySelectorAll(".form-part");
+                                parts.forEach((el) => (el.style.display = "none"));
+
+                                // Show the selected form part
+                                const selectedPart = document.getElementById(`form-part-${part}`);
+                                if (selectedPart) {
+                                    selectedPart.style.display = "block";
+                                }
+                            }
+
+                            
+                            document.getElementById('buy-btn').addEventListener('click', function() {
+                                document.getElementById('search-form').style.display = 'flex';
+                                document.getElementById('search-form').style.zIndex = 2;
+                                document.getElementById('formsr').style.display = 'none'; 
+                                document.getElementById('buy-btn').style.color = 'white';
+                                document.getElementById('sell-btn').style.color = 'black';
+                                document.getElementById('buy-btn').style.background = '#007BFF';
+                                document.getElementById('sell-btn').style.background = 'none';
+                            });
+                            // Target element selector
+
+                        
+
+                            document.addEventListener("click", function(event) {
+                                const divs = document.querySelectorAll(".stop");
+                                const buyBtn = document.getElementById('buy-btn');
+                                const sellBtn = document.getElementById('sell-btn');
+                                const formsr = document.getElementById('formsr');
+                                const searchForm = document.getElementById('search-form');
+
+                                let clickInsideStopDiv = false;
+                                divs.forEach(div => {
+                                    if (div.contains(event.target)) {
+                                        clickInsideStopDiv = true;
+                                    }
+                                });
+
+                                if (!clickInsideStopDiv) {
+                                    buyBtn.style.color = 'black';
+                                    sellBtn.style.color = 'black';
+                                    buyBtn.style.background = 'none';
+                                    sellBtn.style.background = 'none';
+                                    formsr.style.display = 'none';
+                                    searchForm.style.display = 'none';
+                                }
+                            });
+
+                        
+                            document.getElementById('sell-btn').addEventListener('click', function() {
+    
+                                document.getElementById('buy-btn').style.color = 'black';
+                                document.getElementById('sell-btn').style.color = 'white';
+                                document.getElementById('buy-btn').style.background = 'none';
+                                document.getElementById('sell-btn').style.background = '#007BFF';
+                                document.getElementById('formsr').style.display = 'block';
+
+
+                                document.getElementById('formsr').style.zIndex = 2;
+                                document.getElementById('formsr').style.background = 'blue';
+                                document.getElementById('search-form').style.display = 'none';  // Adjust this as needed
+                            
+                                document.getElementById('formsr').style.zIndex = 2;
+                                document.getElementById('formsr').style.background = 'white';
+                                // var user = null; 
+    
+                                // if(user){
+                                //     document.getElementById('login-form').style.display = 'block';
+                                //     document.getElementById('login-form').style.zIndex = 2;
+                                //     document.getElementById('login-form').style.background = 'white';
+                                //     document.getElementById('realtor-form').style.display = 'none';
+                                //     document.getElementById('search-form').style.display = 'none';  // Change this if necessary
+                                // } else{
+                                //     document.getElementById('realtor-form').style.display = 'flex';
+                                //     document.getElementById('realtor-form').style.zIndex = 2;
+                                //     document.getElementById('realtor-form').style.background = 'white';
+                                //     document.getElementById('login-form').style.display = 'none';
+                                //     document.getElementById('search-form').style.display = 'none';
+                                // };
+                            });
+    
+                        </script>
+            </section>
+            <section style="position: relative;">
+                {% if slistings %}
+                    <h2 style="margin: 1.5% 5%;">Search Results:</h2>
+                    <div class="property-list" style="padding: 0 5%;  margin-bottom: 2%; z-index: 2;">
+                        {% for property in slistings %}
+                            <div class="property-card">
+                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
+                                    <img src="{{ property.main_photo.url }}" width="800px" height="533" loading="lazy" alt="{{ property.title }}" class="img-cover">
+                                </figure>
+                            
+                                <button class="card-action-btn" aria-label="add to favourite">
+                                    <ion-icon name="heart"></ion-icon>
+                                </button>
+                            
+                                <div class="card-content">
+                                    <h3 class="h3">
+                                        <a href="{% url 'listing_detail' property.slug %}" class="card-title">{{ property.title }}</a>
+                                    </h3>
+                                    
+                                    <ul class="card-list">
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="cube-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">{{ property.zipcode }}</span> <!-- Assuming the zip code stands for sqf -->
+                                        </li>
+                            
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="bed-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">{{ property.bedrooms }} Beds</span>
+                                        </li>
+                            
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="man-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">{{ property.bathrooms }} Baths</span>
+                                        </li>
+                                    </ul>
+                            
+                                    <div class="card-meta">
+                                        <div>
+                                            <span class="meta-title">Price</span>
+                                            <span class="meta-text">${{ property.price }}</span>
+                                        </div>
+                            
+                                        <div>
+                                            <span class="meta-title">Sale Type</span>
+                                            <span class="meta-text">{{ property.sale_type }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        <br>
+                    </div>
+                {% else %}
+                    <h2 style="margin: 1.5% 5%; z-index: 2;">{{ no_results_message }}</h2>
+                {% endif %}
+
+            </section>
+        </article>
+        {% if listings %}
+        <h2 style="margin: 1.5% 5%;">My Listings</h2>
+        <div id="property-list" class="property-list" style="padding: 0 5%; margin-bottom: 2%; z-index: 2;">
+            {% for property in listings %}
+            <div class="property-card" data-id="{{ property.id }}">
+                <!-- Property content goes here -->
+                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
+                    <img src="{{ property.main_photo.url }}" width="800px" height="533" loading="lazy" alt="{{ property.title }}" class="img-cover">
+                </figure>
+    
+                <button class="card-action-btn" aria-label="add to favourite">
+                    <ion-icon name="heart"></ion-icon>
+                </button>
+    
+                <div class="card-content">
+                    <h3 class="h3">
+                        <a href="{% url 'listing_detail' property.slug %}" class="card-title">{{ property.title }}</a>
+                    </h3>
+                    
+                    <ul class="card-list">
+                        <li class="card-item">
+                            <div class="item-icon">
+                                <ion-icon name="cube-outline"></ion-icon>
+                            </div>
+                            <span class="item-text">{{ property.zipcode }}</span>
+                        </li>
+                        <li class="card-item">
+                            <div class="item-icon">
+                                <ion-icon name="bed-outline"></ion-icon>
+                            </div>
+                            <span class="item-text">{{ property.bedrooms }} Beds</span>
+                        </li>
+                        <li class="card-item">
+                            <div class="item-icon">
+                                <ion-icon name="man-outline"></ion-icon>
+                            </div>
+                            <span class="item-text">{{ property.bathrooms }} Baths</span>
+                        </li>
+                    </ul>
+    
+                    <div class="card-meta">
+                        <div>
+                            <span class="meta-title">Price</span>
+                            <span class="meta-text">${{ property.price }}</span>
+                        </div>
+                        <div>
+                            <span class="meta-title">Sale Type</span>
+                            <span class="meta-text">{{ property.sale_type }}</span>
+                        </div>
                     </div>
                 </div>
-            </section>
+    
+                <div class="card-meta">
+                    <!-- Edit Button -->
+                    <button type="button" class="btn edit-btn" data-id="{{ property.id }}" style="margin: 1rem;">
+                        Edit
+                    </button>
+    
+                                        <!-- Delete Form with delete button -->
+                    <form action="{% url 'delete_listing' property.id %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn delete-btn" onclick="return confirm('Are you sure you want to delete this listing?');" data-id="{{ property.id }}" style="margin: 1rem; background-color: red; color: white;">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+    
+            <!-- Edit Form with unique id -->
+            <div class="form-container" id="edit-form-{{ property.id }}" style="display: none; z-index: 2; background-color: #fff; padding: 2rem;">
+                <h2>Edit Listing</h2>
+
+                <form id="edit-form-{{ property.id }}" 
+                    class="edit-form" 
+                    data-id="{{ property.id }}" 
+                    method="post" 
+                    enctype="multipart/form-data" 
+                    action="{% url 'mydashboard' property.id %}"
+                >
+                    {% csrf_token %}
+                    {{ cform.as_p }}
+                    <div style="display: flex; justify-content: space-between; padding: 1rem;">
+                        <!-- Cancel Button -->
+                        <button type="button" class="btn btn-primary cancel-edit-btn" data-id="{{ property.id }}" style="align-items: flex-start;">
+                            Cancel
+                        </button>
+                        <!-- Update Button -->
+                        <button type="submit" class="btn btn-primary" data-id="{{ property.id }}" style="align-items: flex-start;">Update</button>
+                    </div>
+                </form>
+            </div>
+            {% endfor %}
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                const editButtons = document.querySelectorAll(".edit-btn");
+
+                editButtons.forEach((button) => {
+                    button.addEventListener("click", function () {
+                        const propertyId = this.getAttribute("data-id");
+                        const formContainer = document.getElementById(`edit-form-${propertyId}`);
+
+                        // Hide other forms
+                        document.querySelectorAll(".form-container").forEach((form) => form.style.display = "none");
+
+                        // Show the current form
+                        formContainer.style.display = "block";
+
+                        // Fetch data and populate fields
+                        fetch(`/dashboard/get-listing-data/${propertyId}/`)
+                            .then((response) => response.json())
+                            .then((data) => {
+                                // Map data to fields
+                                document.querySelector(`#edit-form-${propertyId} #id_realtor`).value = data.realtor;
+                                document.querySelector(`#edit-form-${propertyId} #id_title`).value = data.title;
+                                document.querySelector(`#edit-form-${propertyId} #id_slug`).value = data.slug;
+                                document.querySelector(`#edit-form-${propertyId} #id_location`).value = data.location;
+                                document.querySelector(`#edit-form-${propertyId} #id_zipcode`).value = data.zipcode;
+                                document.querySelector(`#edit-form-${propertyId} #id_description`).value = data.description;
+                                document.querySelector(`#edit-form-${propertyId} #id_price`).value = data.price;
+                                document.querySelector(`#edit-form-${propertyId} #id_bedrooms`).value = data.bedrooms;
+                                document.querySelector(`#edit-form-${propertyId} #id_bathrooms`).value = data.bathrooms;
+                                document.querySelector(`#edit-form-${propertyId} #id_sale_type`).value = data.sale_type;
+                                document.querySelector(`#edit-form-${propertyId} #id_home_type`).value = data.home_type;
+                                document.querySelector(`#edit-form-${propertyId} #id_is_published`).checked = data.is_published;
+
+                                // Set date_created
+                                document.querySelector(`#edit-form-${propertyId} #id_date_created`).value = data.date_created;
+
+                                // Populate image previews (if required)
+                                if (data.main_photo) {
+                                    document.querySelector(`#edit-form-${propertyId} .main-photo-preview`).src = data.main_photo;
+                                }
+                                if (data.photo_1) {
+                                    document.querySelector(`#edit-form-${propertyId} .photo-1-preview`).src = data.photo_1;
+                                }
+                                if (data.photo_2) {
+                                    document.querySelector(`#edit-form-${propertyId} .photo-2-preview`).src = data.photo_2;
+                                }
+                                if (data.photo_3) {
+                                    document.querySelector(`#edit-form-${propertyId} .photo-3-preview`).src = data.photo_3;
+                                }
+                            })
+                            .catch((error) => console.error("Error fetching listing data:", error));
+                    });
+                });
+
+                // Hide form on cancel
+                const cancelButtons = document.querySelectorAll(".cancel-edit-btn");
+                cancelButtons.forEach((button) => {
+                    button.addEventListener("click", function () {
+                        const propertyId = this.getAttribute("data-id");
+                        document.getElementById(`edit-form-${propertyId}`).style.display = "none";
+                    });
+                });
+            });
+
+            </script>
+        </div>
+    
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                // Handle Edit Button
+                document.querySelectorAll('.edit-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const propertyId = button.getAttribute('data-id');
+                        const editForm = document.getElementById(`edit-form-${propertyId}`);
+                        const propertyCard = button.closest('.property-card');  // Get the specific property card
+    
+                        if (editForm) {
+                            // Show the edit form and hide the property card (not the whole property list)
+                            editForm.style.display = 'block';
+                            propertyCard.style.display = 'none';  // Hide the clicked property card
+                        } else {
+                            console.warn(`Edit form for property ID ${propertyId} not found.`);
+                        }
+                    });
+                });
+    
+                // Handle Cancel Button
+                document.querySelectorAll('.cancel-edit-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const propertyId = button.getAttribute('data-id');
+                        const editForm = document.getElementById(`edit-form-${propertyId}`);
+                        const propertyCard = document.querySelector(`.property-card[data-id="${propertyId}"]`);  // Get the property card based on ID
+    
+                        if (editForm && propertyCard) {
+                            // Hide the edit form and show the specific property card again
+                            editForm.style.display = 'none';
+                            propertyCard.style.display = 'block';
+                        } else {
+                            console.warn(`Edit form or property card not found for property ID ${propertyId}.`);
+                        }
+                    });
+                });
+
+                const editButtons = document.querySelectorAll(".edit-btn");
+
+                editButtons.forEach((button) => {
+                    button.addEventListener("click", function () {
+                        const propertyId = this.getAttribute("data-id");
+                        const formContainer = document.getElementById(`edit-form-${propertyId}`);
+
+                        // Hide all other forms
+                        document.querySelectorAll(".form-container").forEach((form) => form.style.display = "none");
+
+                        // Show the current form
+                        formContainer.style.display = "block";
+
+                        // Fetch and populate data
+                        fetch(`/dashboard/get-listing-data/${propertyId}/`)
+                            .then((response) => response.json())
+                            .then((data) => {
+                                document.querySelector(`#edit-form-${propertyId} #id_realtor`).value = data.realtor;
+                                document.querySelector(`#edit-form-${propertyId} #id_title`).value = data.title;
+                                document.querySelector(`#edit-form-${propertyId} #id_slug`).value = data.slug;
+                                document.querySelector(`#edit-form-${propertyId} #id_location`).value = data.location;
+                                document.querySelector(`#edit-form-${propertyId} #id_zipcode`).value = data.zipcode;
+                                document.querySelector(`#edit-form-${propertyId} #id_description`).value = data.description;
+                                document.querySelector(`#edit-form-${propertyId} #id_price`).value = data.price;
+                                document.querySelector(`#edit-form-${propertyId} #id_bedrooms`).value = data.bedrooms;
+                                document.querySelector(`#edit-form-${propertyId} #id_bathrooms`).value = data.bathrooms;
+                                document.querySelector(`#edit-form-${propertyId} #id_sale_type`).value = data.sale_type;
+                                document.querySelector(`#edit-form-${propertyId} #id_home_type`).value = data.home_type;
+                                document.querySelector(`#edit-form-${propertyId} #id_is_published`).checked = data.is_published;
+
+                                // Image fields: Load image previews (if required)
+                                if (data.main_photo) {
+                                    document.querySelector(`#edit-form-${propertyId} .main-photo-preview`).src = data.main_photo;
+                                }
+                                if (data.photo_1) {
+                                    document.querySelector(`#edit-form-${propertyId} .photo-1-preview`).src = data.photo_1;
+                                }
+                                if (data.photo_2) {
+                                    document.querySelector(`#edit-form-${propertyId} .photo-2-preview`).src = data.photo_2;
+                                }
+                                if (data.photo_3) {
+                                    document.querySelector(`#edit-form-${propertyId} .photo-3-preview`).src = data.photo_3;
+                                }
+
+                                // Set the date
+                                document.querySelector(`#edit-form-${propertyId} #id_date_created`).value = data.date_created;
+                            })
+                            .catch((error) => console.error("Error:", error));
+                    });
+                });
+    
+                // // Handle Delete Button
+                // document.querySelectorAll('.delete-btn').forEach(button => {
+                //     button.addEventListener('click', () => {
+                //         const propertyId = button.getAttribute('data-id');
+                //         const confirmDelete = confirm(`Are you sure you want to delete the listing for property ID: ${propertyId}?`);
+                        
+                //         if (confirmDelete) {
+                //             // Simulate deletion or handle with AJAX/form submission
+                //             console.log(`Property ID ${propertyId} has been deleted.`);
+                //             // Replace with actual deletion logic as needed
+                //         }
+                //     });
+                // });
+    
+                // Handle Favorite Button
+                document.querySelectorAll('.card-action-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const propertyId = button.closest('.property-card').getAttribute('data-id');
+                        button.classList.toggle('favorited');
+                        const isFavorited = button.classList.contains('favorited');
+                        button.setAttribute('aria-label', isFavorited ? 'remove from favorite' : 'add to favorite');
+                        button.innerHTML = isFavorited ? '<ion-icon name="heart"></ion-icon>' : '<ion-icon name="heart-outline"></ion-icon>';
+                    });
+                });
+            });
+        </script>
+    {% else %}
+        <h2 style="margin: 1.5% 5%;">Your Listings</h2>
+        <div class="property-list" style="padding: 0 5%; margin-bottom: 2%; z-index: 2;">
+            <p class="no-listings">You have no listings.</p>
+        </div>
+    {% endif %}
+            
         
-            <!--========= CONTACT =========-->
+        <!--========= CONTACT =========-->
+        <article>
             <section class="section contact" id="contact" aria-label="contact">
                 <div class="container">
                     <h2 class="h2 section-title">Have a Question ? Get in touch</h2>
@@ -146,7 +864,9 @@
                     </button>
                 </div>
             </section>
-        
+        </article>
+
+        <article>
             <!--======= FOOTER ========-->
             <footer class="footer">
                 <div class="footer-top">

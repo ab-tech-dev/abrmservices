@@ -430,6 +430,7 @@ a {
   width: 100%;
   height: 100%;
   background-position: center;
+  background-repeat: no-repeat;
   background-size: cover;
 }
 
@@ -1136,7 +1137,7 @@ footer {
   font-size: 14px;
   padding: 3rem 4rem;
 }
-@media screen and ( max-width: 100010px) {.section2__a{padding-left:  8rem; padding-top: 2rem;} .backHover{padding-left: 8rem; padding-top: 2rem; padding-bottom: 2rem;}} @media screen and (max-width: 1000px) { .section2__a{padding: 2rem 2rem; margin-top: 0rem;} .backHover{padding-left: 2rem;}
+@media screen and ( max-width: 100010px) {.section2__a{ padding: 2rem 8rem;} .backHover{padding-left: 8rem; padding-top: 2rem; padding-bottom: 2rem;}} @media screen and (max-width: 1000px) { .section2__a{padding: 2rem 2rem; margin-top: 0rem;} .backHover{padding: 2rem;}
 } 
 
 @media screen and (max-width: 1024px) {

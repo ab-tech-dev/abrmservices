@@ -823,9 +823,12 @@ def housing(request):
 
     # Listing Form Process
     if cform.is_valid():
-        cform.save()
+        listing = cform.save(commit=False)
+        listing.realtor = request.user.email  # Override realtor with logged-in user's email
+        listing.save()
+
         messages.success(request, 'Listing saved successfully')
-        return redirect('listings')  # Redirect to the listing page after saving
+        return redirect('housing')  # Redirect to the listing page after saving
 
     if form.is_valid():  # Only process if the form is valid
         location = form.cleaned_data['location']
