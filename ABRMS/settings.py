@@ -2,7 +2,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv  # Add this line to use environment variables from a .env file
-
+import dj_database_url
 load_dotenv()  # Load environment variables from a .env file
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -60,26 +60,53 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ABRMS.wsgi.application'
 
-# Database
+# DATABASES = {
+#     'default': {},  # Default can be left empty if unused
+
+#     # Users database
+#     'users': dj_database_url.parse(
+#         os.getenv('DATABASE_URL_USERS'),
+#         conn_max_age=600,
+#         ssl_require=True
+#     ),
+
+#     # ABRM Services database
+#     'abrmservices': dj_database_url.parse(
+#         os.getenv('DATABASE_URL_ABRMSERVICES'),
+#         conn_max_age=600,
+#         ssl_require=True
+#     ),
+# }
+
+# # Database
+
 DATABASES = {
-    'default': {},
-
-    'users': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME_USERS', 'default_db_name_users'),
-        'USER': os.getenv('DB_USER_USERS', 'default_db_user'),
-        'PASSWORD': os.getenv('DB_PASSWORD_USERS', 'default_db_password'),
-        'HOST': os.getenv('DB_HOST_USERS', 'localhost'),
-    },
-
-    'abrmservices': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME_ABRMSERVICES', 'default_db_name_abrmservices'),
-        'USER': os.getenv('DB_USER_ABRMSERVICES', 'default_db_user'),
-        'PASSWORD': os.getenv('DB_PASSWORD_ABRMSERVICES', 'default_db_password'),
-        'HOST': os.getenv('DB_HOST_ABRMSERVICES', 'localhost'),
-    },
+    'default': dj_database_url.parse(
+        os.getenv('DATABASE_URL_MAIN'),  # Fetch the connection string from the environment
+        conn_max_age=600,               # Keep database connections open for 10 minutes
+        ssl_require=True                # Enforce SSL for secure connections
+    ),
 }
+
+# DATABASES = {
+#     'default': {},
+
+#     'users': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('DB_NAME_USERS', 'default_db_name_users'),
+#         'USER': os.getenv('DB_USER_USERS', 'default_db_user'),
+#         'PASSWORD': os.getenv('DB_PASSWORD_USERS', 'default_db_password'),
+#         'HOST': os.getenv('DB_HOST_USERS', 'localhost'),
+#     },
+
+#     'abrmservices': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('DB_NAME_ABRMSERVICES', 'default_db_name_abrmservices'),
+#         'USER': os.getenv('DB_USER_ABRMSERVICES', 'default_db_user'),
+#         'PASSWORD': os.getenv('DB_PASSWORD_ABRMSERVICES', 'default_db_password'),
+#         'HOST': os.getenv('DB_HOST_ABRMSERVICES', 'localhost'),
+#     },
+# }
 
 DATABASE_ROUTERS = ['user.router.AuthRouter', 'abrmservices.router.ListingRouter']
 
