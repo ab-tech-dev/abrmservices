@@ -1,8 +1,6 @@
 from django.shortcuts import render, redirect
-from rest_framework.views import APIView
 from .models import Listing
-from rest_framework import status, permissions
-from rest_framework.response import Response
+
 from .serializers import ListingSerializer
 from django.http import Http404
 from django.contrib.postgres.search import SearchVector, SearchQuery
@@ -397,30 +395,6 @@ class ListingDetailView(APIView):
             )
         
 
-class ListingsView(APIView):
-    permission_classes = (permissions.AllowAny, )
-
-    def get(self, request, format=None):
-        try:
-            if not Listing.objects.filter(is_published=True).exists():
-                return Response(
-                    {'error' : 'No published listings in the database'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            listings  = Listing.objects.order_by('-date_created').filter(is_published=True)
-            listings = ListingSerializer(listings, many=True)
-
-            return Response(
-                {'listings' : listings.data},
-                status=status.HTTP_200_OK
-            )
-        
-        except:
-            return Response(
-                {'error' : 'Something went wrong when retrieving listings'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
 
 
 from django.db.models import Q
