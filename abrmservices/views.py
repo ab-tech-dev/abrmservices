@@ -14,13 +14,10 @@ import datetime
 import os
 # from .models import House
 # Create your views here.
-from mailersend import emails
-import base64
 # from dotenv import load_dotenv
 
 # load_dotenv()
 
-mailer = emails.NewEmail(os.getenv('mlsn.bd8b1921e3f0be6f76ca361c651bdb6ca6d7da63555fde0b84a244ffdef16a00'))
 
 class ManageListingView(APIView):
     def get(self, request, format=None):
