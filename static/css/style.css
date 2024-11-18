@@ -176,58 +176,48 @@ body {
 
 @keyframes mchange {
   0% {
-      background-image: url('/static/png_files/mpics/m2.jpg');
   }
 
   10% {
-      background-image: url('/static/png_files/mpics/m3.jpg');
       animation-delay: 20s;
   }
 
   20% {
-      background-image: url('/static/png_files/mpics/m4.jpg');
       animation-delay: 40s;
 
   }
 
   30% {
-    background-image: url('/static/png_files/mpics/m5.jpg');
     animation-delay: 60s;
 
   }
 
   40% {
-      background-image: url('/static/png_files/mpics/m6.jpg');
       animation-delay: 80s;
 
   }
 
   50% {
-      background-image: url('/static/png_files/mpics/m7.jpg');
       animation-delay: 100s;
 
   }
 
   60% {
-      background-image: url('/static/png_files/mpics/m8.jpg');
       animation-delay: 120s;
 
   }
 
   70% {
-    background-image: url('/static/png_files/mpics/m9.jpg');
     animation-delay: 140s;
 
 }
 
   80% {
-      background-image: url('/static/png_files/mpics/m10.jpg');
       animation-delay: 160s;
 
   }
 
   90% {
-      background-image: url('/static/png_files/cpics/img8.jpg');
       animation-delay: 180s;
 
   }
