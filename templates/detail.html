@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+    <style>
+        .forms{
+            border: 1px solid slateblue;
+
+            width: 100%;
+            border-radius: 5px;
+            padding: 10px 10px;
+            font-size: 18px;
+        }
+    </style>
+
+    <div class="chat-container">
+        <div class="identity">
+            <svg>
+
+            </svg>
+            <h3>John Doe</h3>
+            <div class="pro-pic">
+                <img src="https://via.placeholder.com/100" alt="Profile Picture">
+            </div>
+        </div>
+        <div class="sub-container">
+            <div class="chat-body" id="chat-body">
+                <div class="chat-box-sent" id="chat-box-sent" style="display: none;">
+
+                </div>
+            </div>
+            <form action="" id="myform" method="post">
+                <input type="text" name="" id="input" placeholder="Type a message">
+                <button type="submit" id="submit">Send</button> 
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+

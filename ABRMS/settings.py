@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv  # Add this line to use environment variables from a .env file
 import dj_database_url
 load_dotenv()  # Load environment variables from a .env file
-
+ 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -89,9 +89,13 @@ WSGI_APPLICATION = 'ABRMS.wsgi.application'
 #     ),
 # }
 
-DATABASES = {
-    'default': {},
 
+DATABASES = {
+        'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',  # This is just a dummy file.
+    },
+    
     'users': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME_USERS', 'default_db_name_users'),

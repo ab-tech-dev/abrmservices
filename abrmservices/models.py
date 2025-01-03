@@ -7,6 +7,12 @@ from django.db import models
 from django.utils.timezone import now
 from decimal import Decimal
 
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.utils.timezone import now
+
+User = get_user_model()
+
 class Listing(models.Model):
     class SaleType(models.TextChoices):
         FOR_SALE = 'For Sale'
@@ -63,7 +69,15 @@ class Listing(models.Model):
         return self.title
 
 
+# class Message(models.Model):
+#     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+#     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+#     content = models.TextField()
+#     timestamp = models.DateTimeField(auto_now_add=True)
+#     listing = models.ForeignKey(Listing, on_delete=models.SET_NULL, null=True, blank=True)
 
+#     def __str__(self):
+#         return f"Message from {self.sender.name} to {self.receiver.name} at {self.timestamp}"
 # # Create your models here.
 
 # class House(models.Model):

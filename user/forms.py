@@ -20,11 +20,19 @@ class RegisterForm(forms.ModelForm):
             'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
         })
     )
+    is_realtor = forms.BooleanField(
+        label='Are you a realtor?',
+        required=False,  # Checkbox is optional
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'style': 'margin-left: 10px; width: 20px; height: 20px;',
+        })
+    )
 
     class Meta:
         model = User
         fields = ['name', 'email']
-        
+
         widgets = {
             'email': forms.EmailInput(attrs={
                 'placeholder': 'Enter Email',

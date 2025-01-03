@@ -29,3 +29,4 @@ class UserAdmin(admin.ModelAdmin):
 
 
 admin.site.register(user, UserAdmin)
+# admin.site.register(user, Message)

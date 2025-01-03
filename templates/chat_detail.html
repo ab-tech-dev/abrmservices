@@ -1,0 +1,171 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <link rel="stylesheet" href="{% static 'css/message.css' %}">
+</head>
+<body>
+    <div class="chat">
+        <div class="chat-title">
+          <h1>
+            {% if chat.user1 == request.user %}
+              {{ chat.user2.name }}
+            {% else %}
+              {{ chat.user1.name }}
+            {% endif %}
+          </h1>
+          <h2>Chat</h2>
+          <figure class="avatar">
+            <img src="https://i.pinimg.com/736x/90/03/43/900343ad64c6ce209f863a63f9535d51.jpg" alt="Chat Avatar">
+          </figure>
+        </div>
+        <div class="messages">
+            <div class="messages-content" id="messages">
+
+            </div>
+        </div>
+        <button id="scroll-to-bottom" class="scroll-to-bottom" style="display: none;">
+            ↓
+        </button>
+        <div class="message-box">
+          <form id="message-form" method="POST" action="{% url 'send_message' chat.id %}">
+            {% csrf_token %}
+            <textarea name="content" class="message-input" id="message-content" placeholder="Type a message..." required></textarea>
+            <button type="submit" class="message-submit">Send</button>
+          </form>
+        </div>
+      </div>
+      <div class="bg"></div> 
+        
+    <script src="{% static 'js/message.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        $(window).on('load', function() {
+            var $messages = $("#messages"); // Ensure the selector is correct
+            $messages.mCustomScrollbar(); // Initialize custom scrollbar
+            
+            setTimeout(function() {
+                fakeMessage();
+            }, 100);
+        });
+
+        function updateScrollbar() {
+            var $messages = $("#messages");
+            $messages.mCustomScrollbar("update").mCustomScrollbar('scrollTo', 'bottom', {
+                scrollInertia: 10,
+                timeout: 0
+            });
+        }
+
+        $(document).ready(function () {
+            const messagesContainer = $('#messages');
+            const chatId = "{{ chat.id }}";
+            const currentUser = "{{ request.user.name }}";
+            const scrollButton = $('#scroll-to-bottom');
+
+            // Scroll to the latest message
+            function scrollToLatestMessage(force = false) {
+                if (force || isAtBottom()) {
+                    messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
+                    scrollButton.hide(); // Hide the button after scrolling
+                }
+            }
+
+            // Check if the user is at the bottom
+            function isAtBottom() {
+                const scrollHeight = messagesContainer[0].scrollHeight;
+                const scrollTop = messagesContainer.scrollTop();
+                const containerHeight = messagesContainer.outerHeight();
+                return Math.abs(scrollHeight - (scrollTop + containerHeight)) < 5;
+            }
+
+            // Fetch chat details
+            function fetchChatDetail() {
+                $.ajax({
+                    url: `/chat/${chatId}/`,
+                    type: 'GET',
+                    success: function (response) {
+                        if (response.error) {
+                            console.error("Unauthorized access");
+                            return;
+                        }
+
+                        // Clear current messages and append new ones
+                        messagesContainer.empty();
+                        response.messages.forEach(function (message) {
+                            const messageHtml = `
+                                <div class="message ${message.sender === currentUser ? 'message-personal' : 'message-other'}">
+                                    <p>${message.content}</p>
+                                    <span class="timestamp">${message.timestamp}</span>
+                                </div>
+                            `;
+                            messagesContainer.append(messageHtml);
+                        });
+
+                        // Show the scroll button if new messages arrive and user is not at the bottom
+                        if (!isAtBottom()) {
+                            scrollButton.show();
+                        } else {
+                            scrollToLatestMessage();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error fetching chat details:", error);
+                    }
+                });
+            }
+
+            // Send a message
+            $('#message-form').submit(function (event) {
+                event.preventDefault();
+
+                const messageContent = $('#message-content').val();
+                if (messageContent.trim() === '') {
+                    return;
+                }
+
+                $.ajax({
+                    url: "{% url 'send_message' chat.id %}",
+                    type: 'POST',
+                    data: {
+                        'content': messageContent,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function (response) {
+                        $('#message-content').val('');
+                        updateScrollbar();  // Clear the message input
+                        scrollToLatestMessage(true); // Force scroll to the bottom
+                    },
+                    error: function (response) {
+                        alert('Message sending failed');
+                    }
+                });
+            });
+
+            // Scroll to the bottom on page load
+            scrollToLatestMessage(true);
+
+            // Periodically fetch chat details
+            setInterval(fetchChatDetail, 500);
+
+            // Scroll to bottom when the green arrow icon is clicked
+            scrollButton.click(function () {
+                scrollToLatestMessage(true);
+            });
+
+            // Detect manual scrolling and hide/show the scroll button
+            messagesContainer.on('scroll', function () {
+                if (isAtBottom()) {
+                    scrollButton.hide();
+                }
+            });
+        });
+    </script>
+            
+    
+    
+</body>
+</html>

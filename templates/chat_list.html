@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat List</title>
+</head>
+<body>
+    <h1>Chat List</h1>
+
+    {% if is_superuser %}
+        <h2>Chats with Users</h2>
+        {% if chat_list %}
+            <ul>
+                {% for chat in chat_list %}
+                    <li>
+                        <strong>{{ chat.other_user }}</strong>: 
+                        <span>{{ chat.last_message }}</span>
+                        <small>{{ chat.timestamp }}</small>
+                        <a href="{% url 'chat_detail' chat_id=chat.chat_id %}">View Chat</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No chats available with users.</p>
+        {% endif %}
+    {% else %}
+        <h2>Chat with Superuser (user1)</h2>
+        <a href="{% url 'initiate_chat' %}">Chat with Superuser</a>
+
+        {% if chat_list %}
+
+            <ul>
+                {% for chat in chat_list %}
+                    <li>
+                        <strong>{{ chat.other_user }}</strong>: 
+                        <span>{{ chat.last_message }}</span>
+                        <small>{{ chat.timestamp }}</small>
+                        <a href="{% url 'chat_detail' chat_id=chat.chat_id %}">View Chat</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No chats available with the superuser.</p>
+        {% endif %}
+    {% endif %}
+
+</body>
+</html>

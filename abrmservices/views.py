@@ -357,31 +357,70 @@ def housing(request):
         messages.success(request, 'Logged out successfully')
         return redirect('housing')  # Redirect to the housing page after logout
 
-    # Registration Process
+ # Debug: Check the data received from the form
+
     if register_form.is_valid():
-        try:
+
+            # Extract form data
             name = register_form.cleaned_data['name']
             email = register_form.cleaned_data['email'].lower()
             password = register_form.cleaned_data['password']
             re_password = register_form.cleaned_data['re_password']
             is_realtor = register_form.cleaned_data['is_realtor']
 
-            if password == re_password:
-                if not UserAccount.objects.filter(email=email).exists():
-                    if is_realtor:
-                        user = UserAccount.objects.create_realtor(name=name, email=email)
-                    else:
-                        user = UserAccount.objects.create_user(name=name, email=email)
-                    user.set_password(password)
-                    user.save()
-                    messages.success(request, 'Account created successfully')
-                    return redirect('housing')
-                else:
-                    messages.error(request, 'Email already exists')
-            else:
+            print(f"Extracted data - Name: {name}, Email: {email}, Is Realtor: {is_realtor}")  # Debug
+
+            # Check passwords match
+            if password != re_password:
+                print("Passwords do not match!")  # Debug: Log mismatch
                 messages.error(request, 'Passwords do not match')
-        except Exception as e:
-            messages.error(request, f'Error in registration: {e}')
+                return redirect('register')
+
+            # Validate email uniqueness
+            if UserAccount.objects.filter(email=email).exists():
+                messages.error(request, 'Email already exists')
+                return redirect('housing')
+
+            # Create user or realtor account
+            if is_realtor:
+                print("Creating a realtor account...")  # Debug
+                user = UserAccount.objects.create_realtor(name=name, email=email, password=password)
+            else:
+                print("Creating a user account...")  # Debug
+                user = UserAccount.objects.create_user(name=name, email=email, password=password)
+
+            user.save()
+            print(f"User account for {email} created successfully!")  # Debug: Log successful creation
+            messages.success(request, 'Account created successfully')
+            return redirect('housing')
+
+
+
+    # # Registration Process
+    # if register_form.is_valid():
+    #     try:
+    #         name = register_form.cleaned_data['name']
+    #         email = register_form.cleaned_data['email'].lower()
+    #         password = register_form.cleaned_data['password']
+    #         re_password = register_form.cleaned_data['re_password']
+    #         # is_realtor = register_form.cleaned_data['is_realtor']
+
+    #         if password == re_password:
+    #             if not UserAccount.objects.filter(email=email).exists():
+    #                 # if is_realtor ==True:
+    #                 #     user = UserAccount.objects.create_realtor(name=name, email=email)
+    #                 # else:
+    #                 user = UserAccount.objects.create_user(name=name, email=email)
+    #                 user.set_password(password)
+    #                 user.save()
+    #                 messages.success(request, 'Account created successfully')
+    #                 return redirect('housing')
+    #             else:
+    #                 messages.error(request, 'Email already exists')
+    #         else:
+    #             messages.error(request, 'Passwords do not match')
+    #     except Exception as e:
+    #         messages.error(request, f'Error in registration: {e}')
 
     if request.method == 'POST' and 'logout' in request.POST:
         logout(request)
@@ -390,19 +429,17 @@ def housing(request):
 
     # Login Process
     if login_form.is_valid():
-        try:
-            email = login_form.cleaned_data['email'].lower()
-            password = login_form.cleaned_data['password']
-            user = authenticate(request, email=email, password=password)
-            if user:
-                login(request, user)
-                messages.success(request, 'Login successful')
-                return redirect('housing')  # Refresh the page to confirm login status
-            else:
-                messages.error(request, 'Invalid credentials')
-                return redirect('/housing/#login')
-        except Exception as e:
-            messages.error(request, f'Login error: {e}')
+        email = login_form.cleaned_data['email'].lower()
+        password = login_form.cleaned_data['password']
+        user = authenticate(request, email=email, password=password)
+        if user:
+            login(request, user)
+            messages.success(request, 'Login successful')
+            return redirect('housing')  # Refresh the page to confirm login status
+        else:
+            messages.error(request, 'Invalid credentials')
+            return redirect('/housing/#login')
+
 
     # Listing Form Process
     if cform.is_valid():
