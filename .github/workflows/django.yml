@@ -27,6 +27,21 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
+    env:
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      DJANGO_ALLOWED_HOSTS: "127.0.0.1,localhost"
+      DB_NAME_USERS: "test_user_db"
+      DB_USER_USERS: "postgres"
+      DB_PASSWORD_USERS: "postgres"
+      DB_HOST_USERS: "localhost"
+      DB_NAME_ABRMSERVICES: "test_abrmservices_db"
+      DB_USER_ABRMSERVICES: "postgres"
+      DB_PASSWORD_ABRMSERVICES: "postgres"
+      DB_HOST_ABRMSERVICES: "localhost"
+      EMAIL_HOST: "smtp.gmail.com"
+      EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+      EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
