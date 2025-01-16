@@ -4,28 +4,37 @@ User = get_user_model()
 from django.shortcuts import render
 
 
-
-def listings(request):
-    return render(request, 'index.html')
-
-
-# Import statements...
-
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
+from django.contrib.auth.models import User
+from django.contrib import messages
+from django.http import JsonResponse
+from django.utils.timezone import now
+from django.db.models import Q
+from django.views.decorators.csrf import csrf_exempt
+from django.urls import reverse
+from .models import Chat, ChatMessage
 
-from django.shortcuts import render, get_object_or_404, redirect
+
+# Custom login_required decorator with message support
+def login_required_with_message(func):
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            messages.error(request, 'Please log in first')
+            return redirect(f"/housing/#login")
+        return func(request, *args, **kwargs)
+    return wrapper
+
+
 from django.http import HttpResponseForbidden
-from django.contrib.auth.decorators import login_required
 from abrmservices.models import Listing
 from abrmservices.views import ListingForm, SearchForm  # Make sure to import your form class
 from django.contrib import messages
 from django.contrib.messages import get_messages
-from django.db.models import Q
  
 
 try:
-    @login_required
+    @login_required_with_message
     def mydashboard(request, id=None):
         messages_list = get_messages(request)  # Retrieve messages for the request
         user = request.user
@@ -127,7 +136,7 @@ except Exception:
 
 
 
-@login_required
+@login_required_with_message
 def delete_listing(request, id):
     listing = get_object_or_404(Listing, id=id, realtor=request.user.email)
     
@@ -142,7 +151,7 @@ def delete_listing(request, id):
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
-@login_required
+@login_required_with_message
 def get_listing_data(request, property_id):
     listing = get_object_or_404(Listing, id=property_id, realtor=request.user.email)
     data = {
@@ -167,99 +176,77 @@ def get_listing_data(request, property_id):
     return JsonResponse(data)
 
 
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponseRedirect
-from django.urls import reverse
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib.admin.views.decorators import staff_member_required
-from abrmservices.models import Listing
-from django.db import models
 
 
-
-
-
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from .models import Chat, ChatMessage
 from django.contrib.auth import get_user_model
 
-@login_required
+@login_required_with_message
 def chat_list(request):
-    user = request.user  # The logged-in user
-    user1 = get_user_model().objects.get(is_superuser=True)  # The superuser
+    user = request.user
+    UserAccount = get_user_model()  # Get the custom user model
+    superuser = UserAccount.objects.filter(is_superuser=True).first()
 
-    # Fetch chats based on the logged-in user type
+    if not superuser:
+        messages.error(request, "Superuser account is not available. Please contact support.")
+        return redirect('/housing/#login')
+
     if user.is_superuser:
-        # Superuser sees all chats with users
-        chats = Chat.objects.filter(Q(user1=user1) | Q(user2=user1))
+        chats = Chat.objects.filter(Q(user1=superuser) | Q(user2=superuser))
     else:
-        # Normal user sees chats with the superuser
         chats = Chat.objects.filter(
-            (Q(user1=user1) & Q(user2=user)) | (Q(user1=user) & Q(user2=user1))
+            Q(user1=superuser, user2=user) | Q(user1=user, user2=superuser)
         )
 
-    chat_list = []
-
+    chat_list_data = []
     for chat in chats:
         last_message = ChatMessage.objects.filter(chat=chat).order_by('-timestamp').first()
-        chat_list.append({
+        chat_list_data.append({
             'other_user': chat.user1.name if chat.user2 == user else chat.user2.name,
             'last_message': last_message.content if last_message else 'No messages yet',
             'timestamp': last_message.timestamp if last_message else None,
-            'chat_id': chat.id
+            'chat_id': chat.id,
         })
 
-    # Sort the chat list by timestamp (most recent first)
-    chat_list.sort(key=lambda x: x['timestamp'] or 0, reverse=True)
+    chat_list_data.sort(key=lambda x: x['timestamp'] or 0, reverse=True)
 
-    is_superuser = user.is_superuser
-    return render(request, 'chat_list.html', {'chat_list': chat_list, 'is_superuser': is_superuser})
+    return render(request, 'chat_list.html', {'chat_list': chat_list_data, 'is_superuser': user.is_superuser})
 
 
-
-
-@login_required
+@login_required_with_message
 def chat_detail(request, chat_id):
     chat = get_object_or_404(Chat, id=chat_id)
 
-    # Ensure the logged-in user is part of this chat
+    # Ensure the user is authorized to view this chat
     if request.user not in [chat.user1, chat.user2]:
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
+        messages.error(request, "You are not authorized to view this chat.")
+        return redirect('/housing/#login')
 
-    # Fetch all messages for this chat
-    messages = ChatMessage.objects.filter(chat=chat).order_by('timestamp')
+    # Fetch chat messages ordered by timestamp
+    messages_data = ChatMessage.objects.filter(chat=chat).order_by('timestamp')
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':  # Check for AJAX
-        messages_data = [
+    # Handle AJAX requests
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':  # AJAX request
+        response_data = [
             {
-                'sender': message.sender.name,  # Use sender's username
+                'id': message.id,  # Include message ID
+                'sender': message.sender.name,
                 'content': message.content,
-                'timestamp': message.timestamp.strftime('%H:%M')  # Format timestamp
+                'timestamp': message.timestamp.strftime('%H:%M'),
             }
-            for message in messages
+            for message in messages_data
         ]
-        return JsonResponse({'messages': messages_data})
+        return JsonResponse({'messages': response_data})
 
-    # Default behavior: Render the HTML template
-    return render(request, 'chat_detail.html', {
-        'chat': chat,
-        'messages': messages
-    })
+    # Render the chat detail page for non-AJAX requests
+    return render(request, 'chat_detail.html', {'chat': chat, 'messages': messages_data})
 
 
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.timezone import now
-
-@login_required
+@login_required_with_message
 @csrf_exempt
 def send_message(request, chat_id):
     if request.method == 'POST':
         chat = get_object_or_404(Chat, id=chat_id)
 
-        # Ensure the logged-in user is part of this chat
         if request.user not in [chat.user1, chat.user2]:
             return JsonResponse({'error': 'Unauthorized'}, status=403)
 
@@ -267,7 +254,6 @@ def send_message(request, chat_id):
         if not content:
             return JsonResponse({'error': 'Message content cannot be empty'}, status=400)
 
-        # Create the message
         message = ChatMessage.objects.create(
             chat=chat,
             sender=request.user,
@@ -278,46 +264,34 @@ def send_message(request, chat_id):
         return JsonResponse({
             'sender': request.user.name,
             'message': message.content,
-            'timestamp': message.timestamp.strftime('%H:%M')
+            'timestamp': message.timestamp.strftime('%H:%M'),
         })
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
-@login_required
+@login_required_with_message
 def initiate_chat_with_superuser(request):
-    user = request.user  # This is the logged-in user (user2)
-    user1 = get_user_model().objects.get(is_superuser=True)  # Get the superuser (user1)
+    user = request.user
+    superuser = User.objects.filter(is_superuser=True).first()
 
-    # Check if a chat already exists between the logged-in user and the superuser
+    if not superuser:
+        messages.error(request, "Superuser account is not available. Please contact support.")
+        return redirect('/housing/#login')
+
     existing_chat = Chat.objects.filter(
-        (models.Q(user1=user1) & models.Q(user2=user)) | (models.Q(user1=user) & models.Q(user2=user1))
+        Q(user1=superuser, user2=user) | Q(user1=user, user2=superuser)
     ).first()
 
     if existing_chat:
-        # If a chat already exists, redirect to that chat
-        # Send a welcome message or predefined message to start the conversation
-        welcome_message = "Hello, how can I assist you today?"
-        ChatMessage.objects.create(
-            chat=existing_chat,
-            sender=user,
-            content=welcome_message,
-            timestamp=now()
-        )
         return redirect('chat_detail', chat_id=existing_chat.id)
 
-    # If no chat exists, create a new chat
-    new_chat = Chat.objects.create(user1=user1, user2=user)
-
-    # Send an initial message after creating the new chat
-    initial_message = "Hello, how can I assist you today?"
+    new_chat = Chat.objects.create(user1=superuser, user2=user)
     ChatMessage.objects.create(
         chat=new_chat,
-        sender=user,
-        content=initial_message,
+        sender=superuser,
+        content="Hello, how can I assist you today?",
         timestamp=now()
     )
 
-    # Redirect to the newly created chat
     return redirect('chat_detail', chat_id=new_chat.id)
-

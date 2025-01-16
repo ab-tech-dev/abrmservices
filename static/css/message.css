@@ -123,6 +123,22 @@ Chat Title
   height: auto;
 }
 
+
+
+#notification-bubble {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: rgba(255, 0, 0, 0.105);
+  color: white;
+  border-radius: 50%;
+  padding: 5px 10px;
+  font-size: 14px;
+  display: none;
+}
+
+
+
 /*--------------------
 Messages
 --------------------*/
@@ -171,7 +187,6 @@ Messages
   margin: 8px 0;
   font-size: 11px;
   line-height: 1.4;
-  margin-left: 35px;
   position: relative;
   max-width: 70%; /* Set the width to 70% of the container */
   word-wrap: break-word; /* Break words at the end of the line to wrap text */
@@ -193,11 +208,10 @@ Messages
   left: 0;
   border-right: 7px solid transparent;
 }
-.messages .message .avatar {
+/* .messages .message .avatar {
   position: absolute;
   z-index: 1;
   bottom: -15px;
-  left: -35px;
   border-radius: 30px;
   width: 30px;
   height: 30px;
@@ -209,7 +223,7 @@ Messages
 .messages .message .avatar img {
   width: 100%;
   height: auto;
-}
+} */
 .messages .message.message-personal {
   float: right;
   color: #fff;
@@ -300,6 +314,7 @@ Messages
 
 .scroll-to-bottom {
   position: absolute;
+  align-content: center;
   bottom: 20%;
   left: 90%;
   background-color: green;

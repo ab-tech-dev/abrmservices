@@ -149,3 +149,14 @@ const observer = new MutationObserver(callback);
 
 // Start observing the target node for configured mutations
 observer.observe(targetNode, config);
+
+if (window.location.hash.startsWith('#login')) {
+
+    const target = document.getElementById('about');
+    if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+        console.error('Element with the given ID not found!');
+    }
+    
+}
