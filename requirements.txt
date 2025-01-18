@@ -1,6 +1,6 @@
 ﻿asgiref==3.8.1
 dj-database-url==2.3.0
-Django=>4
+Django>=4
 django-channels==0.7.0
 djangorestframework==3.15.2
 gunicorn==23.0.0
