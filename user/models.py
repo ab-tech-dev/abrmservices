@@ -91,7 +91,7 @@ class ChatMessage(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='sent_chat_messages', on_delete=models.CASCADE)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    read = models.BooleanField(default=False)  # New field to track read status
 
     def __str__(self):
         return f"Message from {self.sender.name} at {self.timestamp.strftime('%H:%M')}"
-

@@ -36,14 +36,43 @@
                     <li>
                         <a href="/about" class="navbar-link" data-nav-link>About Us</a>
                     </li>
+
                     <li>
                         {% if is_logged_in %}
                             <form method="POST" action="{% url 'housing' %}" class="navbar-link" data-nav-link>
                                 {% csrf_token %}
                                 <button type="submit" class="" name="logout" style="color: #007BFF;">Logout</button>
                             </form>
+
                         {% endif %}
                     </li>
+                    {% if is_logged_in %}
+                        <li style=" padding-top: 5px; font-size: 30px;" class="navbar-link" data-nav-link>
+                            <a href="{% url 'chat_list' %}" data-nav-link style="position: relative; display: inline-block;">
+                                <ion-icon name="chatbox-ellipses-outline" data-nav-link></ion-icon>
+                                {% if unread_users_count > 0 %}
+                                    <span style="
+                                        position: absolute;
+                                        top: -5px;
+                                        right: -10px;
+                                        background-color: red;
+                                        color: white;
+                                        border-radius: 50%;
+                                        padding: 5px 7px;
+                                        font-size: 12px;
+                                        font-weight: bold;
+                                        line-height: 1;
+                                        text-align: center;
+                                        min-width: 20px;
+                                        height: 20px;
+                                        display: inline-block;
+                                    ">
+                                        {{ unread_users_count }}
+                                    </span>
+                                {% endif %}
+                            </a>
+                        </li>
+                    {% endif %}
                 </ul>
             </nav>
             {% if user.is_authenticated %}
@@ -68,11 +97,38 @@
                 document.getElementById('formsr').style.background = 'white';
                 ">Login</a>
             {% endif %}
-            <button class="nav-toggle-btn" aria-label="Toggle menu" data-nav-toggler>
-                <ion-icon name="menu-outline" aria-hidden="true" class="menu-icon"></ion-icon>
-                <ion-icon name="close-outline" aria-hidden="trur" class="close-icon"></ion-icon>
-
+            <button class="nav-toggle-btn" aria-label="Toggle menu" data-nav-toggler style="position: relative;">
+                <div style="position: relative;">
+                    {% if unread_users_count > 0 %}
+                        <span
+                            aria-hidden="true"
+                            style="
+                                position: absolute;
+                                top: -5px;
+                                right: -10px;
+                                background-color: red;
+                                color: white;
+                                border-radius: 50%;
+                                padding: 3px 5px;
+                                font-size: 12px;
+                                font-weight: bold;
+                                line-height: 1;
+                                text-align: center;
+                                min-width: 15px;
+                                height: 15px;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                z-index: 10;
+                            ">
+                            
+                        </span>
+                    {% endif %}
+                    <ion-icon name="menu-outline" aria-hidden="true" class="menu-icon"></ion-icon>
+                    <ion-icon name="close-outline" aria-hidden="true" class="close-icon"></ion-icon>
+                </div>
             </button>
+            
         </div>
    </header>
 
@@ -858,123 +914,57 @@
                 <div class="container">
                     <h2 class="h2 section-title">Featured Properties</h2>
                     <p class="section-text">
-                        A great platform to buy, sell and rent properties without any agent or commisions.
+                        A great platform to buy, sell, and rent properties without any agent or commissions.
                     </p>
                     <ul class="property-list">
+                        {% for property in properties %}
                         <li>
                             <div class="property-card">
                                 <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
-                                    <img src="{% static '/images/img2.jpg'%}" width="800px" height="533" loading="lazy" alt="" class="img-cover">
-                                </figure>
-                                <button class="card-action-btn" aria-label="add to favourite">
-                                    <ion-icon name="heart"></ion-icon>
-                                </button>
-                                <div class="card-content">
-                                    <h3 class="h3">
-                                        <a href="#" class="card-title">75 Manor Way, Great Missenden, UK</a>
-                                    </h3>
-                                    <ul class="card-list">
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="cube-outline"></ion-icon>
-                                            </div>
-
-                                            <span class="item-text">7500sqf</span>
-                                        </li>
-
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="bed-outline"></ion-icon>
-                                            </div>
-                                            <span class="item-text">3 Beds</span>
-                                        </li>
-
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="man-outline"></ion-icon>
-                                            </div>
-                                            <span class="item-text">2 Baths</span>
-                                        </li>
-                                    </ul>
-
-                                    <div class="card-meta">
-                                        <div>
-                                            <span class="meta-title">Price</span>
-                                            <span class="meta-text">$3500</span>
-                                        </div>
-
-                                        <div>
-                                            <span class="meta-title">Rating</span>
-                                            <span class="meta-text">
-                                                <div class="rating-wrapper">
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                </div>
-
-                                                <span>5.0(24)</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
-
-                        <li>
-                            <div class="property-card">
-                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
-                                    <img src="{% static '/images/img3.jpg'%}" width="800px" height="533" loading="lazy" alt="" class="img-cover">
+                                    <img src="{{ property.main_photo.url }}" width="800px" height="533" loading="lazy" alt="{{ property.title }}" class="img-cover">
                                 </figure>
                                 <button class="card-action-btn" aria-label="add to favourite">
                                     <ion-icon name="heart-outline"></ion-icon>
                                 </button>
                                 <div class="card-content">
                                     <h3 class="h3">
-                                        <a href="#" class="card-title">12 Bootham Cresent, Ridgeway, UK</a>
+                                        <a href="#" class="card-title">{{ property.title }}</a>
                                     </h3>
                                     <ul class="card-list">
                                         <li class="card-item">
                                             <div class="item-icon">
                                                 <ion-icon name="cube-outline"></ion-icon>
                                             </div>
-
-                                            <span class="item-text">8000sqf</span>
+                                            <span class="item-text">{{ property.bedrooms }} sqf</span>
                                         </li>
-
                                         <li class="card-item">
                                             <div class="item-icon">
                                                 <ion-icon name="bed-outline"></ion-icon>
                                             </div>
-                                            <span class="item-text">3 Beds</span>
+                                            <span class="item-text">{{ property.bedrooms }} Beds</span>
                                         </li>
-
                                         <li class="card-item">
                                             <div class="item-icon">
                                                 <ion-icon name="man-outline"></ion-icon>
                                             </div>
-                                            <span class="item-text">2 Baths</span>
+                                            <span class="item-text">{{ property.bathrooms }} Baths</span>
                                         </li>
                                     </ul>
-
                                     <div class="card-meta">
                                         <div>
-                                            <span class="meta-title">Price</span>
-                                            <span class="meta-text">$4000</span>
+                                            <span class="meta-title" style="text-wrap: wrap;">Price</span>
+                                            <span class="meta-text">${{ property.price }}</span>
                                         </div>
-
                                         <div>
                                             <span class="meta-title">Rating</span>
                                             <span class="meta-text">
-                                                <div class="rating-wrapper">
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
+                                                <div class="rating-wrapper" style="gap: 5px;">
+                                                    <ion-icon name="star" style="font-size: 10px;"></ion-icon>
+                                                    <ion-icon name="star" style="font-size: 10px;"></ion-icon>
+                                                    <ion-icon name="star" style="font-size: 10px;"></ion-icon>
+                                                    <ion-icon name="star" style="font-size: 10px;"></ion-icon>
+                                                    <ion-icon name="star" style="font-size: 10px;"></ion-icon>
                                                 </div>
-
                                                 <span>5.0(24)</span>
                                             </span>
                                         </div>
@@ -982,254 +972,16 @@
                                 </div>
                             </div>
                         </li>
-
-                        <li>
-                            <div class="property-card">
-                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
-                                    <img src="{% static '/images/img4.jpg'%}" width="800px" height="533" loading="lazy" alt="" class="img-cover">
-                                </figure>
-                                <button class="card-action-btn" aria-label="add to favourite">
-                                    <ion-icon name="heart-outline"></ion-icon>
-                                </button>
-                                <div class="card-content">
-                                    <h3 class="h3">
-                                        <a href="#" class="card-title">49 Consett Rd, Hilton, UK</a>
-                                    </h3>
-                                    <ul class="card-list">
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="cube-outline"></ion-icon>
-                                            </div>
-
-                                            <span class="item-text">8000sqf</span>
-                                        </li>
-
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="bed-outline"></ion-icon>
-                                            </div>
-                                            <span class="item-text">3 Beds</span>
-                                        </li>
-
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="man-outline"></ion-icon>
-                                            </div>
-                                            <span class="item-text">3 Baths</span>
-                                        </li>
-                                    </ul>
-
-                                    <div class="card-meta">
-                                        <div>
-                                            <span class="meta-title">Price</span>
-                                            <span class="meta-text">$5000</span>
-                                        </div>
-
-                                        <div>
-                                            <span class="meta-title">Rating</span>
-                                            <span class="meta-text">
-                                                <div class="rating-wrapper">
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                </div>
-
-                                                <span>5.0(24)</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
-
-                        <li>
-                            <div class="property-card">
-                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
-                                    <img src="{% static '/images/img5.jpg'%}" width="800px" height="533" loading="lazy" alt="" class="img-cover">
-                                </figure>
-                                <button class="card-action-btn" aria-label="add to favourite">
-                                    <ion-icon name="heart-outline"></ion-icon>
-                                </button>
-                                <div class="card-content">
-                                    <h3 class="h3">
-                                        <a href="#" class="card-title">5 Helland Bridge, Upper Boat, UK</a>
-                                    </h3>
-                                    <ul class="card-list">
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="cube-outline"></ion-icon>
-                                            </div>
-
-                                            <span class="item-text">7500sqf</span>
-                                        </li>
-
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="bed-outline"></ion-icon>
-                                            </div>
-                                            <span class="item-text">3 Beds</span>
-                                        </li>
-
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="man-outline"></ion-icon>
-                                            </div>
-                                            <span class="item-text">2 Baths</span>
-                                        </li>
-                                    </ul>
-
-                                    <div class="card-meta">
-                                        <div>
-                                            <span class="meta-title">Price</span>
-                                            <span class="meta-text">$3500</span>
-                                        </div>
-
-                                        <div>
-                                            <span class="meta-title">Rating</span>
-                                            <span class="meta-text">
-                                                <div class="rating-wrapper">
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                </div>
-
-                                                <span>5.0(24)</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
-
-                        <li>
-                            <div class="property-card">
-                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
-                                    <img src="{% static '/images/img6.jpg'%}" width="800px" height="533" loading="lazy" alt="" class="img-cover">
-                                </figure>
-                                <button class="card-action-btn" aria-label="add to favourite">
-                                    <ion-icon name="heart-outline"></ion-icon>
-                                </button>
-                                <div class="card-content">
-                                    <h3 class="h3">
-                                        <a href="#" class="card-title">53 Main St, Acharacle, UK</a>
-                                    </h3>
-                                    <ul class="card-list">
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="cube-outline"></ion-icon>
-                                            </div>
-
-                                            <span class="item-text">7500sqf</span>
-                                        </li>
-
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="bed-outline"></ion-icon>
-                                            </div>
-                                            <span class="item-text">3 Beds</span>
-                                        </li>
-
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="man-outline"></ion-icon>
-                                            </div>
-                                            <span class="item-text">2 Baths</span>
-                                        </li>
-                                    </ul>
-
-                                    <div class="card-meta">
-                                        <div>
-                                            <span class="meta-title">Price</span>
-                                            <span class="meta-text">$3500</span>
-                                        </div>
-
-                                        <div>
-                                            <span class="meta-title">Rating</span>
-                                            <span class="meta-text">
-                                                <div class="rating-wrapper">
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                </div>
-
-                                                <span>5.0(24)</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
-
-                        <li>
-                            <div class="property-card">
-                                <figure class="card-banner img-holder" style="--width: 800; --height: 533;">
-                                    <img src="{% static '/images/img7.jpg'%}" width="800px" height="533" loading="lazy" alt="" class="img-cover">
-                                </figure>
-                                <button class="card-action-btn" aria-label="add to favourite">
-                                    <ion-icon name="heart-outline"></ion-icon>
-                                </button>
-                                <div class="card-content">
-                                    <h3 class="h3">
-                                        <a href="#" class="card-title">10 Southlands Road, United Kingdom</a>
-                                    </h3>
-                                    <ul class="card-list">
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="cube-outline"></ion-icon>
-                                            </div>
-
-                                            <span class="item-text">8000sqf</span>
-                                        </li>
-
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="bed-outline"></ion-icon>
-                                            </div>
-                                            <span class="item-text">4 Beds</span>
-                                        </li>
-
-                                        <li class="card-item">
-                                            <div class="item-icon">
-                                                <ion-icon name="man-outline"></ion-icon>
-                                            </div>
-                                            <span class="item-text">3 Baths</span>
-                                        </li>
-                                    </ul>
-
-                                    <div class="card-meta">
-                                        <div>
-                                            <span class="meta-title">Price</span>
-                                            <span class="meta-text">$3500</span>
-                                        </div>
-
-                                        <div>
-                                            <span class="meta-title">Rating</span>
-                                            <span class="meta-text">
-                                                <div class="rating-wrapper">
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                    <ion-icon name="star"></ion-icon>
-                                                </div>
-
-                                                <span>5.0(24)</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
+                        <style>
+                            .property-card .card-meta {
+                                gap: auto;
+                            }
+                        </style>
+                        {% endfor %}
                     </ul>
                 </div>
             </section>
-
+            
             <!--=========== TESTIMONY ==========-->
             <section class="section wrapper wrapper2 top">
                 <div class="container">

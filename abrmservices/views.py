@@ -333,17 +333,40 @@ class ListingForm(forms.ModelForm):
 
 from django.shortcuts import render, redirect
 from user.forms import RegisterForm, LoginForm
-from user.models import UserAccount
+from user.models import UserAccount, Chat, ChatMessage
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.db.models import Q
-# from listings.models import Listing
-# from listings.forms import SearchForm, ListingForm
 
 
 def housing(request):
+    properties = Listing.objects.filter(is_published=True)
     no_results_message = ''
     listings = Listing.objects.none()
+    user = request.user
+        # Get chats involving the current user
+    if request.user.is_authenticated:
+        user = request.user
+        chats = Chat.objects.filter(Q(user1=user) | Q(user2=user))
+        
+        # Count unread messages for the user
+        unread_messages = ChatMessage.objects.filter(
+            ~Q(sender=user),
+            chat__in=chats,
+            read=False
+        )
+
+                # Get the distinct senders of these unread messages
+        unread_senders = unread_messages.values('sender').distinct()
+
+        # The number of distinct users who have unread messages
+        unread_users_count = unread_senders.count()
+
+    else:
+        chats = []  # Or handle this case differently
+        unread_users_count = []
+
+
 
     # Forms
     form = SearchForm(request.POST or None)
@@ -492,6 +515,8 @@ def housing(request):
         if not listings.exists():
             no_results_message = "No results found."
 
+
+
     # Pass no_results_message to the template context
     return render(request, 'index.html', {
         'form': form,
@@ -501,170 +526,9 @@ def housing(request):
         'no_results_message': no_results_message,  # Pass the message to the template
         'cform': cform,
         'is_logged_in': request.user.is_authenticated,  # Pass user authentication status
+        'unread_users_count' : unread_users_count,
+        'properties': properties
     })
-
-# from user.forms import RegisterForm, LoginForm
-# from user.models import UserAccount, UserAccountManager
-# from django.contrib.auth import authenticate, login
-# from django.contrib import messages
-
-# def housing(request):
-    
-#     user = request.user
-#     no_results_message = ''
-#     form = SearchForm(request.POST or None)  # Use GET request to retrieve query parameters
-#     listings = Listing.objects.none() 
-#     # Start with an empty QuerySet
-#     cform = ListingForm(request.POST, request.FILES)
-
-
-#     register_form = RegisterForm(request.POST)
-    
-#     if register_form.is_valid():
-#         try:
-#             # Extract cleaned data from the valid form
-#             name = register_form.cleaned_data.get('name')
-#             email = register_form.cleaned_data.get('email').lower()
-#             password = register_form.cleaned_data.get('password')
-#             re_password = register_form.cleaned_data.get('re_password')
-#             is_realtor = register_form.cleaned_data.get('is_realtor')
-
-#             # Check if passwords match and meet length requirements
-#             if password == re_password and len(password) >= 8:
-#                 # Check if the email already exists in the database
-#                 if not UserAccount.objects.filter(email=email).exists():
-#                     # Determine if the user is a realtor or a regular user
-#                     if is_realtor:
-#                         user = UserAccount.objects.create_realtor(name=name, email=email)
-#                         user.set_password(password)
-#                         user.save()
-#                         messages.success(request, 'Realtor account created successfully')
-#                     else:
-#                         user = UserAccount.objects.create_user(name=name, email=email)
-#                         user.set_password(password)
-#                         user.save()
-#                         messages.success(request, 'User account created successfully')
-
-#                     # Redirect to the login page after successful registration
-#                     return redirect('housing/#login')
-
-#                 else:
-#                     messages.error(request, 'User with this email already exists')
-
-#             elif len(password) < 8:
-#                 messages.error(request, 'Password must be at least 8 characters in length')
-
-#             else:
-#                 messages.error(request, 'Passwords do not match')
-
-#         except ValueError as e:
-#             messages.error(request, f'ValueError: {str(e)}')
-
-#         except Exception as e:
-#             messages.error(request, f'Something went wrong when registering an account: {str(e)}')
-
-    
-#     else:
-#         # Instantiate a blank form if it's not a POST request
-#         register_form = RegisterForm()
-
-#     # Render the registration template with the form
-
-
-#     login_form = LoginForm(request.POST or None)
-
-#     if login_form.is_valid():
-#         try:
-#             # Extract email and password from the cleaned form data
-#             email = login_form.cleaned_data.get('email').lower()
-#             password = login_form.cleaned_data.get('password')
-
-#             # Authenticate the user
-#             user = authenticate(request, email=email, password=password)
-
-#             if user is not None:
-#                 if user.is_active:
-#                     # Log the user in if authentication succeeds
-#                     login(request, user)
-#                     messages.success(request, 'Login successful')
-#                     return redirect('dashboard')
-#                 else:
-#                     # Handle the case where the user is deactivated
-#                     messages.error(request, 'User account is deactivated')
-#             else:
-#                 # Handle invalid credentials
-#                 messages.error(request, 'Invalid email or password')
-
-#         except Exception as e:
-#             # Catch any unexpected errors
-#             messages.error(request, f'Something went wrong: {str(e)}')
-
-#     if cform.is_valid():
-#         cform.save()
-#         return redirect('listings')  # Redirect to a view that lists all listings or a success page
-
-
-
-
-#     if form.is_valid():  # Only process if the form is valid
-#         location = form.cleaned_data['location']
-#         home_type = form.cleaned_data.get('category')  # Get the home type (category from form)
-#         search_description = form.cleaned_data.get('search')  # Get the search field description
-#         min_price = form.cleaned_data.get('min_price')  # Get the minimum price from form
-#         max_price = form.cleaned_data.get('max_price')  # Get the maximum price from form
-
-#         # Filtering based on optional fields in the model
-#         query = Q()
-
-#         if location:
-#             query &= Q(location__icontains=location)
-#         if home_type:
-#             query &= Q(home_type=home_type)  # Match home_type in Listing model
-#         if search_description:
-#             query |= Q(description__icontains=search_description)  # Match description
-#         if min_price:
-#             query |= Q(price__gte=int(min_price))  # price >= min_price
-#         if max_price:
-#             query |= Q(price__lte=int(max_price))  # price <= max_price
-
-#         # Retrieve additional query parameters from the model's attributes
-#         sale_type = request.GET.get('sale_type')  # Check for `sale_type` field in GET parameters
-#         bedrooms = request.GET.get('bedrooms')  # Check for `bedrooms` field in GET parameters
-
-#         if sale_type:
-#             query &= Q(sale_type=sale_type)  # Filter by sale_type if provided
-#         if bedrooms:
-#             try:
-#                 query &= Q(bedrooms=int(bedrooms))  # Convert to int and filter by number of bedrooms
-#             except ValueError:
-#                 pass  # Ignore invalid bedroom inputs for filtering
-
-#         # Print the query details to the terminal for debugging
-
-#         # Execute query and get the filtered results
-#         listings = Listing.objects.filter(query).filter(is_published=True)  # Only show published listings
-
-
-#         # Check if there are no results
-#         if not listings.exists():
-#             no_results_message = "No results found."
-
-#         # return redirect('/housing/#search-result')
-
-
-#     # Render the template with form and listings
-#     return render(request, 'index.html', {
-#         'form': form,
-#         'login_form': login_form,
-#         'register_form': register_form,
-#         'listings': listings,
-#         'no_results_message': no_results_message,
-#         'cform': cform,
-#         'user' : user
-#     })
-
-    
-
 
 
 def main(request):

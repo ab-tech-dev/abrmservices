@@ -176,40 +176,41 @@ def get_listing_data(request, property_id):
     return JsonResponse(data)
 
 
-
-
-from django.contrib.auth import get_user_model
-
 @login_required_with_message
 def chat_list(request):
     user = request.user
-    UserAccount = get_user_model()  # Get the custom user model
-    superuser = UserAccount.objects.filter(is_superuser=True).first()
+    UserAccount = get_user_model()
 
-    if not superuser:
-        messages.error(request, "Superuser account is not available. Please contact support.")
-        return redirect('/housing/#login')
-
-    if user.is_superuser:
-        chats = Chat.objects.filter(Q(user1=superuser) | Q(user2=superuser))
-    else:
-        chats = Chat.objects.filter(
-            Q(user1=superuser, user2=user) | Q(user1=user, user2=superuser)
-        )
+    # Fetch chats involving the logged-in user
+    chats = Chat.objects.filter(Q(user1=user) | Q(user2=user))
 
     chat_list_data = []
     for chat in chats:
+        # Get the last message
         last_message = ChatMessage.objects.filter(chat=chat).order_by('-timestamp').first()
+
+        # Count total unread messages for the logged-in user from other users
+        unread_count = ChatMessage.objects.filter(
+            ~Q(sender=user),
+            chat=chat,
+            read=False  # Exclude messages sent by the logged-in user
+        ).count()
+
+        # Determine the other user in the chat
+        other_user = chat.user1 if chat.user2 == user else chat.user2
+
         chat_list_data.append({
-            'other_user': chat.user1.name if chat.user2 == user else chat.user2.name,
+            'other_user': other_user.name,
             'last_message': last_message.content if last_message else 'No messages yet',
             'timestamp': last_message.timestamp if last_message else None,
             'chat_id': chat.id,
+            'unread_count': unread_count
         })
 
+    # Sort chats by the timestamp of the last message
     chat_list_data.sort(key=lambda x: x['timestamp'] or 0, reverse=True)
 
-    return render(request, 'chat_list.html', {'chat_list': chat_list_data, 'is_superuser': user.is_superuser})
+    return render(request, 'chat_list.html', {'chat_list': chat_list_data})
 
 
 @login_required_with_message
@@ -224,11 +225,14 @@ def chat_detail(request, chat_id):
     # Fetch chat messages ordered by timestamp
     messages_data = ChatMessage.objects.filter(chat=chat).order_by('timestamp')
 
+    # Mark all unread messages as read for the current user
+    messages_data.filter(~Q(sender=request.user), read=False).update(read=True)
+
     # Handle AJAX requests
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':  # AJAX request
         response_data = [
             {
-                'id': message.id,  # Include message ID
+                'id': message.id,
                 'sender': message.sender.name,
                 'content': message.content,
                 'timestamp': message.timestamp.strftime('%H:%M'),

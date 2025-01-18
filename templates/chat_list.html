@@ -2,48 +2,260 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat List</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Chats</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /*--------------------
+        Mixins
+        --------------------*/
+        /*--------------------
+        Body
+        --------------------*/
+        *,
+        *::before,
+        *::after {
+        box-sizing: border-box;
+        }
+
+        html,
+        body {
+        height: 100%;
+        }
+
+        body {
+        background: linear-gradient(135deg, #044f48, #2a7561);
+        background-size: cover;
+        font-family: "Open Sans", sans-serif;
+        font-size: 12px;
+        line-height: 1.3;
+        overflow: hidden;
+        }
+
+        .bg {
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        background: url("https://images.unsplash.com/photo-1451186859696-371d9477be93?crop=entropy&fit=crop&fm=jpg&h=975&ixjsv=2.1.0&ixlib=rb-0.3.5&q=80&w=1925") no-repeat 0 0;
+        filter: blur(80px);
+        transform: scale(1.2);
+        }
+
+        /* .app-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: #1e1e1e; /* Darker container background */
+        /*    height: 100vh;
+            overflow: hidden;
+        /*    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.5);
+        /* } 
+        /**/
+        .app-container {
+            top: 2rem;
+            position: absolute;
+            width: 80%;
+            max-width: 450px;
+            min-width: 330px;
+            height: 90%;
+            max-height: 600px;
+            min-height: 400px;
+            z-index: 2;
+            overflow-y: auto; /* Enables vertical scrolling */
+            overflow-x: hidden; /* Prevents horizontal scrolling */
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+        }
+
+        /* Mobile-specific styles */
+        @media screen and (max-width: 768px) {
+            .app-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                max-width: none;
+                max-height: none;
+                min-width: 0;
+                min-height: 0;
+                border-radius: 0; /* Remove rounded corners for full-screen effect */
+                box-shadow: none; /* Remove shadow for seamless edge */
+            }
+        }
+
+
+        /* Header */
+        .header {
+            background-color: #333333; /* Dark header */
+            color: #ffffff;
+            padding: 5px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        /* Chat List Container */
+        .chat-list-container {
+            overflow-y: scroll;
+            height: calc(100vh - 50px);
+        }
+
+        /* Chat List */
+        .chat-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .chat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid #333333; /* Dark border */
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .chat-item:hover {
+            background-color: #2a2a2a; /* Slightly lighter background for hover */
+        }
+
+        /* Left Side - Avatar and Info */
+        .chat-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .avatar img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+            border: 2px solid #555; /* Add a subtle border for dark theme */
+        }
+
+        .chat-info {
+            max-width: 200px;
+            overflow: hidden;
+        }
+
+        .chat-name {
+            margin: 0;
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff; /* Bright text for names */
+        }
+
+        .last-message {
+            margin: 5px 0 0;
+            font-size: 14px;
+            color: #bbbbbb; /* Subdued color for messages */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Right Side - Meta Info */
+        .chat-meta {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #888888; /* Grey text for timestamps */
+        }
+
+        .notification {
+            background-color: #25D366; /* Vibrant green for notifications */
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 50%;
+            padding: 5px 8px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        /* Scroll Styling */
+        .chat-list-container::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .chat-list-container::-webkit-scrollbar-thumb {
+            background-color: #555555; /* Darker scrollbar */
+            border-radius: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Chat List</h1>
+    <div class="app-container">
+        <header class="header">
+            <h1>Messages</h1>
+        </header>
 
-    {% if is_superuser %}
-        <h2>Chats with Users</h2>
-        {% if chat_list %}
-            <ul>
+        <div class="chat-list-container">
+            <ul class="chat-list">
                 {% for chat in chat_list %}
-                    <li>
-                        <strong>{{ chat.other_user }}</strong>: 
-                        <span>{{ chat.last_message }}</span>
-                        <small>{{ chat.timestamp }}</small>
-                        <a href="{% url 'chat_detail' chat_id=chat.chat_id %}">View Chat</a>
-                    </li>
+                    <a href="{% url 'chat_detail' chat_id=chat.chat_id %}" style="text-decoration: none;">
+                        <li class="chat-item" id="chat-{{ chat.chat_id }}">
+                            <div class="chat-left">
+                                <div class="avatar">
+                                    <img src="https://images.rawpixel.com/image_png_social_square/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTAxL3JtNjA5LXNvbGlkaWNvbi13LTAwMi1wLnBuZw.png" alt="">
+                                </div>
+                                <div class="chat-info">
+                                    <h3 class="chat-name">{{ chat.other_user }}</h3>
+                                    <p class="last-message">{{ chat.last_message }}</p>
+                                </div>
+                            </div>
+                            <div class="chat-meta">
+                                <span class="timestamp">{{ chat.timestamp }}</span>
+                                {% if chat.unread_count > 0 %}
+                                    <span class="notification">{{ chat.unread_count }}</span>
+                                {% endif %}
+                            </div>
+                        </li>
+                    </a>
                 {% endfor %}
             </ul>
-        {% else %}
-            <p>No chats available with users.</p>
-        {% endif %}
-    {% else %}
-        <h2>Chat with Superuser (user1)</h2>
-        <a href="{% url 'initiate_chat' %}">Chat with Superuser</a>
+        </div>
+    </div>
+    <div class="bg"></div> 
+    <script>
+        function updateUnreadCount() {
+            $.ajax({
+                url: "{% url 'chat_list' %}",
+                method: "GET",
+                success: function(response) {
+                    response.chat_list.forEach(function(chat) {
+                        var chatId = chat.chat_id;
+                        var unreadCount = chat.unread_count;
+                        var notification = $('#chat-' + chatId).find('.notification');
+                        
+                        if (unreadCount > 0) {
+                            notification.text(unreadCount).show();
+                        } else {
+                            notification.hide();
+                        }
+                    });
+                },
+                error: function() {
+                    console.error('Error fetching updated chat list');
+                }
+            });
+        }
 
-        {% if chat_list %}
-
-            <ul>
-                {% for chat in chat_list %}
-                    <li>
-                        <strong>{{ chat.other_user }}</strong>: 
-                        <span>{{ chat.last_message }}</span>
-                        <small>{{ chat.timestamp }}</small>
-                        <a href="{% url 'chat_detail' chat_id=chat.chat_id %}">View Chat</a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>No chats available with the superuser.</p>
-        {% endif %}
-    {% endif %}
-
+        setInterval(updateUnreadCount, 5000);
+    </script>
 </body>
 </html>
