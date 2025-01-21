@@ -333,7 +333,7 @@ class ListingForm(forms.ModelForm):
 
 from django.shortcuts import render, redirect
 from user.forms import RegisterForm, LoginForm
-from user.models import UserAccount, Chat, ChatMessage
+from user.models import UserAccount, Chat, ChatMessage, Notification
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.db.models import Q
@@ -345,6 +345,19 @@ def housing(request):
     listings = Listing.objects.none()
     user = request.user
         # Get chats involving the current user
+    # In your view
+    if request.user.is_authenticated:
+        user = request.user
+
+        # Get unread notifications for the user
+        unread_notifications = Notification.objects.filter(user=user, is_read=False)
+
+        # Count the number of unread notifications
+        unread_notifications_count = unread_notifications.count()
+    else:
+        unread_notifications_count = 0
+
+    
     if request.user.is_authenticated:
         user = request.user
         chats = Chat.objects.filter(Q(user1=user) | Q(user2=user))
@@ -527,7 +540,8 @@ def housing(request):
         'cform': cform,
         'is_logged_in': request.user.is_authenticated,  # Pass user authentication status
         'unread_users_count' : unread_users_count,
-        'properties': properties
+        'properties': properties,
+        'unread_notifications_count' : unread_notifications_count
     })
 
 

@@ -35,6 +35,28 @@ class UserAccountManager(BaseUserManager):
         user.save(using=self._db)
 
         return user
+from django.utils.timezone import now
+
+# class UserAccount(AbstractBaseUser, PermissionsMixin):
+#     email = models.EmailField(max_length=255, unique=True)
+#     name = models.CharField(max_length=255)
+#     is_active = models.BooleanField(default=True)
+#     is_staff = models.BooleanField(default=False)
+#     is_realtor = models.BooleanField(default=False)
+#     last_active = models.DateTimeField(null=True, blank=True)  # Track last activity
+
+#     objects = UserAccountManager()
+
+#     USERNAME_FIELD = 'email'
+#     REQUIRED_FIELDS = ['name']
+
+#     def update_last_active(self):
+#         """Update the last active time for the user."""
+#         self.last_active = now()
+#         self.save(update_fields=["last_active"])
+
+#     def __str__(self):
+#         return self.email
 
 class UserAccount(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=255, unique=True)
@@ -43,12 +65,18 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField (default=False)
 
     is_realtor = models.BooleanField(default=False)
+    last_active = models.DateTimeField(null=True, blank=True)  # Track last activity
+
 
     objects = UserAccountManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name']
 
+    def update_last_active(self):
+        """Update the last active time for the user."""
+        self.last_active = now()
+        self.save(update_fields=["last_active"])
 
     def __str__(self):
         return self.email
@@ -95,3 +123,18 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender.name} at {self.timestamp.strftime('%H:%M')}"
+
+
+
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Notification for {self.user.email} - {self.message[:20]}"

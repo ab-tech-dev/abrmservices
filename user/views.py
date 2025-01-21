@@ -1,4 +1,4 @@
-
+from .models import Notification
 from django.contrib.auth import get_user_model
 User = get_user_model()
 from django.shortcuts import render
@@ -54,6 +54,11 @@ try:
                 cform.instance.photo_3 = listing.photo_3
             if cform.is_valid():
                 cform.save()
+                # After creating or updating a listing
+                Notification.objects.create(
+                    user=request.user,
+                    message=f"Your listing '{listing.title}' has been successfully updated."
+                )
 
         else:
             cform = ListingForm(request.POST or None, request.FILES or None)
@@ -265,6 +270,13 @@ def send_message(request, chat_id):
             timestamp=now()
         )
 
+        # Notify the recipient of the new message
+        Notification.objects.create(
+            user=chat.user1 if chat.user2 == request.user else chat.user2,
+            message=f"You have a new message from {request.user.name}."
+        )
+
+
         return JsonResponse({
             'sender': request.user.name,
             'message': message.content,
@@ -299,3 +311,83 @@ def initiate_chat_with_superuser(request):
     )
 
     return redirect('chat_detail', chat_id=new_chat.id)
+
+
+
+@login_required_with_message
+def notifications_page(request):
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'notifications.html', {'notifications': notifications})
+
+
+@login_required_with_message
+def mark_as_read(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+    return JsonResponse({'success': True})
+
+@login_required_with_message
+def delete_notification(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification.delete()
+    return JsonResponse({'success': True})
+
+
+
+def mark_all_as_read(request):
+    if request.method == "POST":
+        # Logic to mark all notifications as read
+        notifications = Notification.objects.filter(user=request.user, is_read=False)
+        notifications.update(is_read=True)
+        return JsonResponse({"success": True})
+    return JsonResponse({"success": False}, status=400)
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+import logging
+from django.core.mail import EmailMessage
+from django.utils.timezone import now
+from datetime import timedelta
+from .models import ChatMessage  # Make sure to import the relevant model
+
+logger = logging.getLogger(__name__)
+
+@receiver(post_save, sender=ChatMessage)
+def send_email_notification(sender, instance, created, **kwargs):
+    if created:
+        try:
+            logger.debug("Creating email for message: %s", instance)
+            chat = instance.chat
+            recipient = chat.user2 if instance.sender == chat.user1 else chat.user1
+            offline_threshold = now() - timedelta(minutes=5)
+
+            # Check if recipient is offline for the last 5 minutes
+            if recipient.last_active is None or recipient.last_active < offline_threshold:
+                subject = f"New Message from {instance.sender.name}"
+                body = f"""
+                Hi {recipient.name},
+
+                You have a new message from {instance.sender.name}:
+
+                "{instance.content}"
+
+                Please visit your notification page to respond.
+
+                Best Regards,
+                Your Team
+                """
+
+                # Send email
+                email = EmailMessage(
+                    subject,
+                    body,
+                    'abrelocationsevices@gmail.com',  # Correct sender email
+                    [recipient.email],
+                    reply_to=['abrelocationsevices@gmail.com'],  # Correct reply-to email
+                )
+                email.send(fail_silently=False)
+                logger.debug("Email sent to %s", recipient.email)
+        except Exception as e:
+            logger.error("Error while sending email: %s", str(e))
+            raise e

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications</title>
+    <link href="https://fonts.googleapis.com/css2?family=Catamaran:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Catamaran', sans-serif;
+            background-color: #fdf4e7;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 2rem;
+            color: #444;
+            margin-bottom: 20px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        li {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin: 15px 0;
+            padding: 15px 20px;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        li:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .read {
+            opacity: 0.8;
+        }
+
+        .unread {
+            font-weight: bold;
+            background: linear-gradient(90deg, #ffe7e7 0%, #f8d7da 100%);
+            border-left: 5px solid #e74c3c;
+        }
+
+        p {
+            margin: 0 0 10px;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        small {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        div {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .mark-all-read {
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: #28a745;
+        }
+
+        .mark-all-read:hover {
+            background-color: #218838;
+        }
+
+        .no-notifications {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #888;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            ul {
+                padding: 0 10px;
+            }
+
+            li {
+                padding: 10px 15px;
+            }
+
+            button {
+                font-size: 0.85rem;
+                padding: 7px 12px;
+            }
+
+            .mark-all-read {
+                width: 100%;
+                font-size: 1rem;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>Notifications</h2>
+
+    {% if notifications %}
+        <button class="mark-all-read">Mark All as Read</button>
+        <ul>
+            {% for notification in notifications %}
+            <li class="{% if notification.is_read %}read{% else %}unread{% endif %}">
+                <p>{{ notification.message }}</p>
+                <small>{{ notification.created_at }}</small>
+                <div>
+                    {% if not notification.is_read %}
+                    <button class="mark-read" data-id="{{ notification.id }}">Mark as Read</button>
+                    {% endif %}
+                    <button class="delete" data-id="{{ notification.id }}">Delete</button>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="no-notifications">No notifications yet.</p>
+    {% endif %}
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Mark as read
+            document.querySelectorAll(".mark-read").forEach(button => {
+                button.addEventListener("click", function () {
+                    const notificationId = this.dataset.id;
+                    fetch(`/notifications/mark-as-read/${notificationId}/`, {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": getCookie("csrftoken"),
+                        },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.parentElement.parentElement.classList.add("read");
+                            this.remove();
+                        }
+                    });
+                });
+            });
+
+            // Delete notification
+            document.querySelectorAll(".delete").forEach(button => {
+                button.addEventListener("click", function () {
+                    const notificationId = this.dataset.id;
+                    fetch(`/notifications/delete/${notificationId}/`, {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": getCookie("csrftoken"),
+                        },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.parentElement.parentElement.remove();
+                        }
+                    });
+                });
+            });
+
+            // Mark all as read
+            document.querySelector(".mark-all-read").addEventListener("click", function () {
+                fetch("/notifications/mark-all-as-read/", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCookie("csrftoken"),
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.querySelectorAll(".unread").forEach(notification => {
+                            notification.classList.remove("unread");
+                            notification.classList.add("read");
+                        });
+                        document.querySelectorAll(".mark-read").forEach(button => button.remove());
+                    }
+                });
+            });
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

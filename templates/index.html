@@ -72,6 +72,32 @@
                                 {% endif %}
                             </a>
                         </li>
+                        <li style="padding-top: 5px; font-size: 30px;" class="navbar-link" data-nav-link>
+                            <a href="{% url 'notifications_page' %}" data-nav-link style="position: relative; display: inline-block;">
+                                <ion-icon name="notifications-outline" data-nav-link></ion-icon>
+                                {% if unread_notifications_count > 0 %}
+                                    <span style="
+                                        position: absolute;
+                                        top: -5px;
+                                        right: -10px;
+                                        background-color: red;
+                                        color: white;
+                                        border-radius: 50%;
+                                        padding: 5px 7px;
+                                        font-size: 12px;
+                                        font-weight: bold;
+                                        line-height: 1;
+                                        text-align: center;
+                                        min-width: 20px;
+                                        height: 20px;
+                                        display: inline-block;
+                                    ">
+                                        {{ unread_notifications_count }}
+                                    </span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        
                     {% endif %}
                 </ul>
             </nav>
@@ -99,7 +125,7 @@
             {% endif %}
             <button class="nav-toggle-btn" aria-label="Toggle menu" data-nav-toggler style="position: relative;">
                 <div style="position: relative;">
-                    {% if unread_users_count > 0 %}
+                    {% if unread_users_count > 0 or unread_notifications_count > 0  %}
                         <span
                             aria-hidden="true"
                             style="
