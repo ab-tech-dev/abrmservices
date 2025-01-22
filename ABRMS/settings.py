@@ -11,6 +11,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'default-secret-key')
 
+
+# Ensure you securely generate and store these keys, possibly using environment variables
+SECRET_KEY_P = os.getenv("SECRET_KEY", "your_generated_key")
+PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY", "your_paystack_secret_key")
+
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -28,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.postgres',
     'user',
     'abrmservices',
+    'payments',
 ]
 
 MIDDLEWARE = [
@@ -93,12 +100,7 @@ WSGI_APPLICATION = 'ABRMS.wsgi.application'
 
 
 DATABASES = {
-        'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',  # This is just a dummy file.
-    },
-    
-    'users': {
+    'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME_USERS', 'default_db_name_users'),
         'USER': os.getenv('DB_USER_USERS', 'default_db_user'),
@@ -106,16 +108,9 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST_USERS', 'localhost'),
     },
 
-    'abrmservices': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME_ABRMSERVICES', 'default_db_name_abrmservices'),
-        'USER': os.getenv('DB_USER_ABRMSERVICES', 'default_db_user'),
-        'PASSWORD': os.getenv('DB_PASSWORD_ABRMSERVICES', 'default_db_password'),
-        'HOST': os.getenv('DB_HOST_ABRMSERVICES', 'localhost'),
-    },
 }
 
-DATABASE_ROUTERS = ['user.router.AuthRouter', 'abrmservices.router.ListingRouter']
+DATABASE_ROUTERS = ['user.router.AuthRouter', 'abrmservices.router.ListingRouter', 'payments.router.PaymentsRouter']
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

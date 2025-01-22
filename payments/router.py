@@ -1,8 +1,8 @@
-class AuthRouter:
+class PaymentsRouter:
     """
-    A database router to manage operations for auth-related apps.
+    A database router to manage operations for payments-related apps.
     """
-    route_app_labels = {'auth', 'admin', 'contenttypes', 'sessions', 'user'}
+    route_app_labels = {'payments'}
 
     def db_for_read(self, model, **hints):
         return None  # Use the default database for reads
@@ -15,7 +15,7 @@ class AuthRouter:
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         """
-        Ensure migrations for auth-related apps occur on the default database.
+        Ensure migrations for payments-related apps occur on the default database.
         """
         if db == 'default':  # Migrate to the default database
             if app_label in self.route_app_labels:

@@ -13,7 +13,8 @@ urlpatterns = [
     path('api/abrmservices/', include('abrmservices.urls')),
     path('admin/', admin.site.urls),
     path('', include('abrmservices.urls')),
-    path('', include('user.urls'))
+    path('', include('user.urls')),
+    path('', include('payments.urls'))
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payments</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .form-container {
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .form-container h3 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-container form {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-container form input, 
+        .form-container form select,
+        .form-container form button {
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .form-container form button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        .form-container form button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h3>Fund Your Wallet</h3>
+        <form id="fundWalletForm">
+            <input type="number" id="fundAmount" placeholder="Enter Amount (₦)" required>
+            <button type="submit">Fund Wallet</button>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h3>Initiate Escrow</h3>
+        <form id="initiateEscrowForm">
+            <input type="number" id="escrowAmount" placeholder="Enter Amount (₦)" required>
+            <input type="text" id="sellerId" placeholder="Enter Seller ID" required>
+            <button type="submit">Initiate Escrow</button>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h3>Withdraw Funds</h3>
+        <form id="withdrawWalletForm">
+            <input type="number" id="withdrawAmount" placeholder="Enter Amount (₦)" required>
+            <input type="text" id="bankCode" placeholder="Enter Bank Code" required>
+            <input type="text" id="accountNumber" placeholder="Enter Account Number" required>
+            <button type="submit">Withdraw</button>
+        </form>
+    </div>
+
+    <script>
+        // Fund Wallet
+        $("#fundWalletForm").on("submit", function (e) {
+            e.preventDefault();
+            const amount = $("#fundAmount").val();
+
+            $.ajax({
+                url: "/fund-wallet/",
+                type: "POST",
+                data: { amount: amount },
+                headers: { "X-CSRFToken": "{{ csrf_token }}" },
+                success: function (response) {
+                    if (response.status === "success") {
+                        alert("Redirecting to payment page...");
+                        window.location.href = response.payment_url;
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function () {
+                    alert("An error occurred. Please try again.");
+                },
+            });
+        });
+
+        // Initiate Escrow
+        $("#initiateEscrowForm").on("submit", function (e) {
+            e.preventDefault();
+            const amount = $("#escrowAmount").val();
+            const sellerId = $("#sellerId").val();
+
+            $.ajax({
+                url: "/initiate-escrow/",
+                type: "POST",
+                data: { amount: amount, seller_id: sellerId },
+                headers: { "X-CSRFToken": "{{ csrf_token }}" },
+                success: function (response) {
+                    if (response.status === "success") {
+                        alert(response.message);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function () {
+                    alert("An error occurred. Please try again.");
+                },
+            });
+        });
+
+        // Withdraw Wallet
+        $("#withdrawWalletForm").on("submit", function (e) {
+            e.preventDefault();
+            const amount = $("#withdrawAmount").val();
+            const bankCode = $("#bankCode").val();
+            const accountNumber = $("#accountNumber").val();
+
+            $.ajax({
+                url: "/withdraw-wallet/",
+                type: "POST",
+                data: {
+                    amount: amount,
+                    bank_code: bankCode,
+                    account_number: accountNumber,
+                },
+                headers: { "X-CSRFToken": "{{ csrf_token }}" },
+                success: function (response) {
+                    if (response.status === "success") {
+                        alert(response.message);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function () {
+                    alert("An error occurred. Please try again.");
+                },
+            });
+        });
+    </script>
+
+</body>
+</html>

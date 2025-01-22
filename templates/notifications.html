@@ -139,7 +139,7 @@
         <ul>
             {% for notification in notifications %}
             <li class="{% if notification.is_read %}read{% else %}unread{% endif %}">
-                <p>{{ notification.message }}</p>
+                <p>{{ notification.message|safe }}</p> <!-- This makes links clickable -->
                 <small>{{ notification.created_at }}</small>
                 <div>
                     {% if not notification.is_read %}
@@ -149,6 +149,7 @@
                 </div>
             </li>
             {% endfor %}
+            
         </ul>
     {% else %}
         <p class="no-notifications">No notifications yet.</p>
