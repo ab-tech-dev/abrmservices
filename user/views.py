@@ -333,7 +333,17 @@ import logging
 from django.core.mail import EmailMessage
 from django.utils.timezone import now
 from datetime import timedelta
-from .models import ChatMessage  # Make sure to import the relevant model
+from .models import ChatMessage, Notification  # Make sure to import the relevant model
+
+logger = logging.getLogger(__name__)
+import logging
+from datetime import timedelta
+from django.core.mail import EmailMessage
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils.timezone import now
+from django.urls import reverse  # For generating URLs
+from .models import ChatMessage, Notification
 
 logger = logging.getLogger(__name__)
 
@@ -352,6 +362,9 @@ def send_email_notification(sender, instance, created, **kwargs):
 
             # Check if the recipient is offline
             if not recipient.last_active or recipient.last_active < offline_threshold:
+                # Generate a link to view the chat
+                chat_url = reverse('chat_detail', args=[chat.id])  # Replace 'chat_detail' with your chat view name
+
                 subject = f"New Message from {instance.sender.name}"
                 body = f"""
                 Hi {recipient.name},
@@ -360,7 +373,8 @@ def send_email_notification(sender, instance, created, **kwargs):
 
                 "{instance.content}"
 
-                Please visit your notification page to respond.
+                Click the link below to view and respond:
+                {chat_url}
 
                 Best Regards,
                 Your Team
@@ -380,4 +394,52 @@ def send_email_notification(sender, instance, created, **kwargs):
                 logger.debug("Recipient %s is active; email not sent.", recipient.email)
         except Exception as e:
             logger.error("Failed to send email notification: %s", str(e), exc_info=True)
+            raise e
+
+@receiver(post_save, sender=Notification)
+def send_email_for_notification(sender, instance, created, **kwargs):
+    """
+    Sends an email notification when a new Notification is created,
+    provided the recipient has been inactive for the last 5 minutes.
+    """
+    if created:
+        try:
+            logger.debug("Creating email notification for notification ID: %s", instance.id)
+            recipient = instance.user
+            offline_threshold = now() - timedelta(minutes=1)
+
+            # Check if the recipient is offline
+            if not recipient.last_active or recipient.last_active < offline_threshold:
+                # Generate a link to view the notification
+                notification_url = reverse('notification_detail', args=[instance.id])  # Replace with your notification view name
+
+                subject = "New Notification Alert"
+                body = f"""
+                Hi {recipient.name},
+
+                You have a new notification:
+
+                "{instance.content}"
+
+                Click the link below to view the notification:
+                {notification_url}
+
+                Best Regards,
+                Your Team
+                """
+
+                # Prepare and send the email
+                email = EmailMessage(
+                    subject=subject.strip(),
+                    body=body.strip(),
+                    from_email='abrelocationsevices@gmail.com',  # Correct sender email
+                    to=[recipient.email],
+                    reply_to=['abrelocationsevices@gmail.com'],  # Correct reply-to email
+                )
+                email.send(fail_silently=False)
+                logger.info("Notification email sent successfully to %s", recipient.email)
+            else:
+                logger.debug("Recipient %s is active; notification email not sent.", recipient.email)
+        except Exception as e:
+            logger.error("Failed to send notification email: %s", str(e), exc_info=True)
             raise e
