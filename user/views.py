@@ -274,26 +274,23 @@ def send_message(request, chat_id):
 
 
 @login_required_with_message
-def initiate_chat_with_superuser(request):
+def initiate_chat(request, email):
     user = request.user
-    superuser = User.objects.filter(is_superuser=True).first()
-
-    if not superuser:
-        messages.error(request, "Superuser account is not available. Please contact support.")
-        return redirect('/housing/#login')
+    User = get_user_model()
+    other_user = User.objects.filter(email=email).first()
 
     existing_chat = Chat.objects.filter(
-        Q(user1=superuser, user2=user) | Q(user1=user, user2=superuser)
+        Q(user1=other_user, user2=user) | Q(user1=user, user2=other_user)
     ).first()
 
     if existing_chat:
         return redirect('chat_detail', chat_id=existing_chat.id)
 
-    new_chat = Chat.objects.create(user1=superuser, user2=user)
+    new_chat = Chat.objects.create(user1=other_user, user2=user)
     ChatMessage.objects.create(
         chat=new_chat,
-        sender=superuser,
-        content="Hello, how can I assist you today?",
+        sender=other_user,
+        content=f"Thank you for contacting {other_user.name}, How can we serve you please?",
         timestamp=now()
     )
 
@@ -342,15 +339,19 @@ logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=ChatMessage)
 def send_email_notification(sender, instance, created, **kwargs):
+    """
+    Sends an email notification when a new ChatMessage is created,
+    provided the recipient has been inactive for the last 5 minutes.
+    """
     if created:
         try:
-            logger.debug("Creating email for message: %s", instance)
+            logger.debug("Creating email notification for message ID: %s", instance.id)
             chat = instance.chat
             recipient = chat.user2 if instance.sender == chat.user1 else chat.user1
-            offline_threshold = now() - timedelta(minutes=5)
+            offline_threshold = now() - timedelta(minutes=1)
 
-            # Check if recipient is offline for the last 5 minutes
-            if recipient.last_active is None or recipient.last_active < offline_threshold:
+            # Check if the recipient is offline
+            if not recipient.last_active or recipient.last_active < offline_threshold:
                 subject = f"New Message from {instance.sender.name}"
                 body = f"""
                 Hi {recipient.name},
@@ -365,16 +366,18 @@ def send_email_notification(sender, instance, created, **kwargs):
                 Your Team
                 """
 
-                # Send email
+                # Prepare and send the email
                 email = EmailMessage(
-                    subject,
-                    body,
-                    'abrelocationsevices@gmail.com',  # Correct sender email
-                    [recipient.email],
+                    subject=subject.strip(),
+                    body=body.strip(),
+                    from_email='abrelocationsevices@gmail.com',  # Correct sender email
+                    to=[recipient.email],
                     reply_to=['abrelocationsevices@gmail.com'],  # Correct reply-to email
                 )
                 email.send(fail_silently=False)
-                logger.debug("Email sent to %s", recipient.email)
+                logger.info("Email sent successfully to %s", recipient.email)
+            else:
+                logger.debug("Recipient %s is active; email not sent.", recipient.email)
         except Exception as e:
-            logger.error("Error while sending email: %s", str(e))
+            logger.error("Failed to send email notification: %s", str(e), exc_info=True)
             raise e

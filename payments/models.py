@@ -13,7 +13,7 @@ class Wallet(models.Model):
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
 
     def __str__(self):
-        return f"Wallet for {self.user.get_full_name()} - Balance: {self.balance}"
+        return f"Wallet for {self.user.name} - Balance: {self.balance}"
 
 
 
@@ -50,7 +50,7 @@ class AuditLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.get_full_name()} - {self.action}"
+        return f"{self.user.name} - {self.action}"
 
 
 class Transaction(models.Model):
@@ -102,4 +102,4 @@ class Escrow(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Escrow {self.buyer.get_full_name()} to {self.seller.get_full_name()} - {self.amount} ({self.status})"
+        return f"Escrow {self.buyer.name} to {self.seller.name} - {self.amount} ({self.status})"

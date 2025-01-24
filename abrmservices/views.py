@@ -541,7 +541,8 @@ def housing(request):
         'is_logged_in': request.user.is_authenticated,  # Pass user authentication status
         'unread_users_count' : unread_users_count,
         'properties': properties,
-        'unread_notifications_count' : unread_notifications_count
+        'unread_notifications_count' : unread_notifications_count,
+        'user' : user
     })
 
 

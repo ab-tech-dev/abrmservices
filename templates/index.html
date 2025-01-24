@@ -981,11 +981,20 @@
                                             <span class="meta-title">Price</span>
                                             <span class="meta-text">${{ property.price }}</span>
                                         </div>
+                                        {% if user.email != property.realtor %}
+                                        <div>
+                                            <a href="{% url 'initiate_chat' email=property.realtor %}" class="btn">Chat with Realtor</a>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 <form method="POST" action="{% url 'buy_property' listing_id=property.id %}">
                                     {% csrf_token %}
+                                    {% if property.sale_type == "For Sale" and user.email != property.realtor %}
                                     <button class="btn card-action-btn buy-now-btn" type="submit">Buy Property</button>
+                                    {% elif property.sale_type == "For Rent" and user.email != property.realtor %}
+                                    <button class="btn card-action-btn buy-now-btn" type="submit">Rent Property</button>
+                                    {% endif %}
                                 </form>
                             </div>                           
                         </li>

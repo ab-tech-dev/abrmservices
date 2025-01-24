@@ -1,8 +1,13 @@
-from django.utils.timezone import now
-from django.utils.deprecation import MiddlewareMixin
-from django.conf import settings
 
-class UpdateLastActiveMiddleware(MiddlewareMixin):
-    def process_request(self, request):
+class ActiveUserMiddleware:
+    """
+    Middleware to track and update the last_active timestamp
+    for logged-in users.
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
         if request.user.is_authenticated:
             request.user.update_last_active()
+        return self.get_response(request)
