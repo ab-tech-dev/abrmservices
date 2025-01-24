@@ -110,7 +110,7 @@ DATABASES = {
 
 }
 
-DATABASE_ROUTERS = ['user.router.AuthRouter', 'abrmservices.router.ListingRouter', 'payments.router.PaymentsRouter']
+# DATABASE_ROUTERS = ['user.router.AuthRouter', 'abrmservices.router.ListingRouter', 'payments.router.PaymentsRouter']
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import Listing
 
 class ListingAdmin(admin.ModelAdmin):
-    using = 'abrmservices'
+    using = 'default'
     list_display = ('id', 'realtor', 'title', 'slug',)
     list_display_links = ('id', 'realtor', 'title', 'slug',)
     list_filter = ('realtor',)

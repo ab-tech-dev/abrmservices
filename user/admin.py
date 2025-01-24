@@ -4,7 +4,7 @@ from abrmservices.extras import delete_realtors_listings_data
 user =  get_user_model()
 
 class UserAdmin(admin.ModelAdmin):
-    using = 'users'
+    using = 'default'
     list_display = ('id', 'name', 'email',)
     list_display_links = ('id', 'name', 'email',)
     search_fields = ('email', 'name',)

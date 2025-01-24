@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 
 urlpatterns = [
@@ -6,7 +6,7 @@ urlpatterns = [
 
     # Payment and wallet-related paths
     path('payments/', views.payments, name='payments'), 
-    path('fund-wallet/', views.fund_wallet, name="fund_wallet"),
+    re_path(r'^fund-wallet/(?P<amount>[\d\.]+)/$', views.fund_wallet, name='fund_wallet'),
     path('wallet/callback/', views.wallet_callback, name="wallet_callback"),
     
     # Escrow-related paths

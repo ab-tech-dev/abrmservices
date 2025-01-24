@@ -286,7 +286,7 @@ body {
     width: 100%;
     background-color: var(--white);
     padding: 0;
-    max-height: 0;
+    max-height: fit-content;
     overflow: hidden;
     visibility: visible;
     transition: .25s var(--cubic-out);
@@ -294,7 +294,7 @@ body {
 
 
 .navbar.active{
-    max-height: 260px;
+    max-height: fit-content;
     visibility: visible;
     box-shadow: var(--shadow-1);
     transition-duration: 0.5s;

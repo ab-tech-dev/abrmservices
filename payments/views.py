@@ -20,47 +20,55 @@ def payments(request):
     return render(request, 'payments.html')  # Path to your HTML file
 
 # Payment initiation view
-def fund_wallet(request, amount):
+from django.shortcuts import redirect
+
+def fund_wallet(request, amount, listing_id):
     if request.method == "POST":
         reference = f"fund_{request.user.id}_{int(datetime.now().timestamp())}"
         headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
         data = {
             "email": request.user.email,
-            "amount": int(amount * 100),  # Convert to kobo
+            "amount": int(amount * 100),
             "reference": reference,
-            "callback_url": request.build_absolute_uri('http://127.0.0.1:8000/wallet/callback/')
+            "callback_url": request.build_absolute_uri('/wallet/callback/'),
+            "metadata": {"listing_id": listing_id}  # Include the listing_id
         }
 
+        # Make a request to Paystack API to initialize the transaction
         response = requests.post("https://api.paystack.co/transaction/initialize", headers=headers, json=data)
 
         if response.status_code == 200:
             payment_url = response.json().get('data', {}).get('authorization_url')
             if payment_url:
-                return {"status": "success", "payment_url": payment_url}
+                # Redirect to Paystack payment page
+                return redirect(payment_url)
             else:
-                return {"status": "error", "message": "Payment URL not found in the response."}
+                messages.error(request, "Failed to generate payment URL. Please try again.")
         else:
-            return {"status": "error", "message": f"Failed to initiate payment. Error: {response.text}"}
+            messages.error(request, f"Failed to initiate payment. Error: {response.text}")
 
-    return {"status": "error", "message": "Invalid request method."}
+    # Redirect back to wallet page in case of failure
+    return redirect('housing')
 # Paystack webhook callback view to verify the payment and fund wallet
+from decimal import Decimal
+
 @login_required
 def wallet_callback(request):
     reference = request.GET.get("reference")
-    signature = request.headers.get("x-paystack-signature")
     headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
-    payload = request.body
 
-    # Verify signature
-    if not verify_webhook_signature(payload, signature):
-        return JsonResponse({"status": "error", "message": "Invalid webhook signature."}, status=400)
-
-    # Verify transaction
+    # Verify the transaction using Paystack API
     response = requests.get(f"https://api.paystack.co/transaction/verify/{reference}", headers=headers)
+
     if response.status_code == 200:
         data = response.json()["data"]
         if data["status"] == "success":
-            amount = data["amount"] / 100  # Convert to Naira
+            # Retrieve the listing ID (e.g., from the reference or another source)
+            listing_id = data.get("metadata", {}).get("listing_id")  # Ensure listing_id is included in metadata
+            listing = get_object_or_404(Listing, id=listing_id)
+
+            # Process the payment
+            amount = Decimal(data["amount"]) / 100  # Convert back to Naira
             wallet = get_object_or_404(Wallet, user=request.user)
             wallet.balance += amount
             wallet.save()
@@ -72,83 +80,117 @@ def wallet_callback(request):
                 reference=reference,
             )
 
-            return JsonResponse({"status": "success", "message": "Wallet funded successfully!"})
+            # Generate a unique transaction tracking ID
+            tracking_id = f"TX_{request.user.id}_{listing.id}_{int(datetime.now().timestamp())}"
 
-    return JsonResponse({"status": "error", "message": "Payment verification failed."}, status=400)
+            seller_user = get_object_or_404(User, email=listing.realtor)
+            transaction = Transaction.objects.create(
+                tracking_id=tracking_id,
+                buyer=request.user,
+                seller=seller_user,
+                property=listing,
+                amount=amount,
+            )
+
+            escrow_response = initiate_escrow(request, transaction)
+            if escrow_response['status'] == 'error':
+                messages.error(request, f"Failed to initiate payment. Error: {response.text}")
+                return redirect('housing')  # Redirect to the wallet funding page
+
+            # Notify both buyer and seller
+            Notification.objects.create(
+                user=request.user,
+                message=f"Please confirm your transaction for {listing.title}. <a href='/buyer-confirm/{transaction.id}/'>Click here</a>"
+            )
+            Notification.objects.create(
+                user=seller_user,
+                message=f"Please confirm the transaction for {listing.title}. <a href='/seller-confirm/{transaction.id}/'>Click here</a>"
+            )
+
+            messages.success(request, "Transaction successful! Please confirm in notifications.")
+            return redirect('housing')
+
+    messages.error(request, "Payment verification failed. Please try again.")
+    return redirect('housing')
+
 
 def initiate_escrow(request, transaction):
     wallet = get_object_or_404(Wallet, user=request.user)
-    if wallet.balance >= transaction.amount:
-        wallet.balance -= transaction.amount
-        wallet.save()
 
-        # Create escrow object
-        escrow = Escrow.objects.create(
-            buyer=request.user,
-            seller=transaction.seller,
-            amount=transaction.amount,
-            transaction=transaction
-        )
-
-        transaction.status = 'escrow_initiated'
-        transaction.save()
-
-        # Create audit log for escrow initiation
-        AuditLog.objects.create(
+    # Check if the wallet has sufficient balance
+    if wallet.balance < transaction.amount:
+        # Notify the buyer about insufficient funds
+        Notification.objects.create(
             user=request.user,
-            action="Escrow Initiation",
-            details=f"Escrow initiated for {transaction.amount} on property {transaction.property.title}. Escrow Hash: {escrow.transaction_hash}"
+            message=f"Insufficient funds to initiate escrow for {transaction.property.title}. Please fund your wallet."
         )
+
+        # Add an error message to the request
+        messages.error(request, f"Insufficient funds to initiate escrow for {transaction.property.title}. Please fund your wallet.")
+
+        # Return an error response
+        return {"status": "error", "message": "Insufficient funds to initiate escrow. Please fund your wallet."}
+
+
+
+    # Create escrow object
+    escrow = Escrow.objects.create(
+        buyer=request.user,
+        seller=transaction.seller,
+        amount=transaction.amount,
+        transaction=transaction
+    )
+
+    transaction.status = 'escrow_initiated'
+    transaction.save()
+
+    # Create audit log for escrow initiation
+    AuditLog.objects.create(
+        user=request.user,
+        action="Escrow Initiation",
+        details=f"Escrow initiated for {transaction.amount} on property {transaction.property.title}. Escrow Hash: {escrow.transaction_hash}"
+    )
+
+    return {"status": "success", "message": "Escrow initiated successfully!"}
+
+from django.shortcuts import redirect, render
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
 
 @login_required
 def buy_property(request, listing_id):
     listing = get_object_or_404(Listing, id=listing_id)
     amount = listing.price
 
-    # Generate a unique transaction tracking ID
-    tracking_id = f"TX_{request.user.id}_{listing.id}_{int(datetime.now().timestamp())}"
-
     if request.method == "POST":
-        # Step 1: Fund wallet
-        fund_wallet_response = fund_wallet(request, amount)
-        if fund_wallet_response['status'] == 'error':
-            return JsonResponse(fund_wallet_response)
+        wallet = get_object_or_404(Wallet, user=request.user)
 
-        # Step 2: Create a transaction
-        # Correctly fetch the seller by their email stored in the `realtor` field
-        seller_user = get_object_or_404(User, email=listing.realtor)  # Use `listing.realtor` instead of `listing.realtor_email`
-        transaction = Transaction.objects.create(
-            tracking_id=tracking_id,
-            buyer=request.user,
-            seller=seller_user,  # Correctly assign the UserAccount instance to seller
-            property=listing,
-            amount=amount,
-        )
-
-        # Step 3: Initiate Escrow
-        initiate_escrow(request, transaction)
-
-        # Redirect buyer to the property page with a success message
-        messages.success(request, "Transaction successful! Please confirm your in notifications.")
+        # Check if the user has sufficient funds
+        if wallet.balance < amount:
+            # Redirect to fund wallet page with the required amount
+            return fund_wallet(request, amount=amount, listing_id=listing_id)
         
-        Notification.objects.create(
-            user=request.user,
-            message=f"Please confirm your transaction for {listing.title}. <a href='/buyer-confirm/{transaction.id}/'>Click here</a>"
-        )
-        Notification.objects.create(
-            user=seller_user,  # Notify the correct seller
-            message=f"Please confirm the transaction for {listing.title}. <a href='/seller-confirm/{transaction.id}/'>Click here</a>"
-        )
+        wallet.balance -= amount
+        wallet.save()
 
-        return redirect('housing')
 
-    # If not POST, just return an error message
+        # # Update property status (e.g., mark it as sold)
+        # listing.sold = True
+        # listing.buyer = request.user  # Assuming there is a buyer field
+        # listing.save()
+
+        # Return success response or redirect to a success page
+        return JsonResponse({"status": "success", "message": "Property purchased successfully."})
+
+    # If the request method is not POST
     return JsonResponse({"status": "error", "message": "Invalid request method. Use POST to buy property."})
+
 
 # Seller confirms the escrow transaction
 @login_required
 def seller_confirm(request, escrow_id):
-    escrow = get_object_or_404(Escrow, id=escrow_id, seller=request.user, status="pending")
+    escrow = get_object_or_404(Escrow, transaction_id=escrow_id, seller=request.user, status="pending")
     escrow.status = "seller_confirmed"
     escrow.seller_confirmed_at = now()
     escrow.save()
@@ -164,7 +206,14 @@ def seller_confirm(request, escrow_id):
 # Buyer confirms the escrow transaction and releases funds to the seller's wallet
 @login_required
 def buyer_confirm(request, escrow_id):
-    escrow = get_object_or_404(Escrow, id=escrow_id, buyer=request.user, status="seller_confirmed")
+    escrow = get_object_or_404(Escrow, transaction_id=escrow_id, buyer=request.user)
+
+    # Check if the seller has confirmed the transaction
+    if escrow.status != "seller_confirmed":
+        return JsonResponse({
+            "status": "error",
+            "message": "Seller has not confirmed the transaction. Please contact the seller to confirm."
+        })
 
     # Confirm buyer's approval and complete the escrow
     escrow.status = "successful"
@@ -184,13 +233,13 @@ def buyer_confirm(request, escrow_id):
     # Deduct from the buyer's wallet
     buyer_wallet.balance -= escrow.amount
     buyer_wallet.save()
-
+    print(escrow.amount)
     # Add funds to the seller's wallet
     seller_wallet.balance += escrow.amount
     seller_wallet.save()
 
     # Log the wallet transactions for both the buyer and seller
-    WalletTransaction.objects.create(
+    WalletTransaction.objects.update(
         wallet=buyer_wallet,
         transaction_type="escrow_release",
         amount=escrow.amount,
@@ -253,3 +302,4 @@ def withdraw_wallet(request):
                 return JsonResponse({"status": "success", "message": "Withdrawal successful!"})
 
     return JsonResponse({"status": "error", "message": "Withdrawal failed."})
+

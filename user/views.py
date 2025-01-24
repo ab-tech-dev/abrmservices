@@ -33,16 +33,22 @@ from django.contrib import messages
 from django.contrib.messages import get_messages
  
 
-try:
-    @login_required_with_message
-    def mydashboard(request, id=None):
-        messages_list = get_messages(request)  # Retrieve messages for the request
-        user = request.user
+@login_required_with_message
+def mydashboard(request, id=None):
+    messages_list = get_messages(request)  # Retrieve messages for the request
+    user = request.user
 
-        # Edit existing listing if property_id is provided, else create a new listing
-        if id:
-            listing = get_object_or_404(Listing, id=id, realtor=user.email)
-            cform = ListingForm(request.POST, request.FILES, instance=listing)
+    # Initialize variables
+    listings = Listing.objects.none()  # Default to no listings
+    slistings = Listing.objects.none()
+    no_results_message = ''
+
+    # Edit existing listing or create a new one
+    if id:
+        listing = get_object_or_404(Listing, id=id, realtor=user.email)
+        cform = ListingForm(request.POST or None, request.FILES or None, instance=listing)
+
+        if request.method == 'POST' and cform.is_valid():
             # Retain existing photos if no new file is uploaded
             if not cform.cleaned_data.get('main_photo'):
                 cform.instance.main_photo = listing.main_photo
@@ -52,94 +58,75 @@ try:
                 cform.instance.photo_2 = listing.photo_2
             if not cform.cleaned_data.get('photo_3'):
                 cform.instance.photo_3 = listing.photo_3
-            if cform.is_valid():
-                cform.save()
-                # After creating or updating a listing
-                Notification.objects.create(
-                    user=request.user,
-                    message=f"Your listing '{listing.title}' has been successfully updated."
-                )
 
-        else:
-            cform = ListingForm(request.POST or None, request.FILES or None)
-            cform.fields['realtor'].initial = user.email
-            if cform.is_valid():
-                cform.save()
+            cform.save()
+            Notification.objects.create(
+                user=user,
+                message=f"Your listing '{listing.title}' has been successfully updated."
+            )
+            messages.success(request, 'Listing updated successfully')
+            return redirect('mydashboard')
 
-        if user.is_realtor or user.is_superuser:
-            # Retrieve listings only for the logged-in realtor
-            listings = Listing.objects.filter(realtor=user.email)
-            slistings = Listing.objects.none()  # Initialize `slistings` as an empty queryset
-            no_results_message = ''  # Initialize `no_results_message` to prevent UnboundLocalError
+    else:
+        cform = ListingForm(request.POST or None, request.FILES or None)
+        if request.method == 'POST' and cform.is_valid():
+            new_listing = cform.save(commit=False)
+            new_listing.realtor = user.email
+            new_listing.save()
+            messages.success(request, 'Listing created successfully')
+            return redirect('mydashboard')
 
-            form = SearchForm(request.POST or None)
+    # Fetch listings for realtor or superuser
+    if user.is_realtor or user.is_superuser:
+        listings = Listing.objects.filter(realtor=user.email)
 
-            # Listing Form Process
-            if cform.is_valid():
-                listing = cform.save(commit=False)
-                listing.realtor = user.email  # Set the realtor to the logged-in user's email
-                listing.save()
-                
-                if id:
-                    messages.success(request, 'Listing updated successfully')
-                else:
-                    messages.success(request, 'Listing created successfully')
-                return redirect('mydashboard')
-            else:
-                if cform.errors:
-                    messages.error(request, 'Invalid form value: {}'.format(cform.errors))
+        # Handle search form submission
+        form = SearchForm(request.POST or None)
+        if form.is_valid():
+            location = form.cleaned_data.get('location')
+            home_type = form.cleaned_data.get('category')
+            search_description = form.cleaned_data.get('search')
+            min_price = form.cleaned_data.get('min_price')
+            max_price = form.cleaned_data.get('max_price')
 
-            # Process the search form
-            if form.is_valid():
-                location = form.cleaned_data['location']
-                home_type = form.cleaned_data.get('category')
-                search_description = form.cleaned_data.get('search')
-                min_price = form.cleaned_data.get('min_price')
-                max_price = form.cleaned_data.get('max_price')
+            query = Q(realtor=user.email)  # Always filter by the realtor's email
 
-                query = Q(realtor=user.email)  # Always filter by the realtor's email
+            if location:
+                query &= Q(location__icontains=location)
+            if home_type:
+                query &= Q(home_type=home_type)
+            if search_description:
+                query |= Q(description__icontains=search_description)
+            if min_price:
+                query &= Q(price__gte=int(min_price))
+            if max_price:
+                query &= Q(price__lte=int(max_price))
 
-                if location:
-                    query &= Q(location__icontains=location)
-                if home_type:
-                    query &= Q(home_type=home_type)
-                if search_description:
-                    query |= Q(description__icontains=search_description)
-                if min_price:
-                    query &= Q(price__gte=int(min_price))
-                if max_price:
-                    query &= Q(price__lte=int(max_price))
+            sale_type = request.POST.get('sale_type')
+            bedrooms = request.POST.get('bedrooms')
 
-                sale_type = request.POST.get('sale_type')
-                bedrooms = request.POST.get('bedrooms')
+            if sale_type:
+                query &= Q(sale_type=sale_type)
+            if bedrooms:
+                try:
+                    query &= Q(bedrooms=int(bedrooms))
+                except ValueError:
+                    messages.error(request, 'Invalid Bedroom value')
 
-                if sale_type:
-                    query &= Q(sale_type=sale_type)
-                if bedrooms:
-                    try:
-                        query &= Q(bedrooms=int(bedrooms))
-                    except ValueError:
-                        messages.error(request, 'Invalid Bedroom value')
+            # Filter listings based on search criteria
+            slistings = listings.filter(query)
+            if not slistings.exists():
+                no_results_message = "No results found."
 
-                # Get filtered listings
-                slistings = listings.filter(query)
-                if not slistings.exists():
-                    no_results_message = "No results found."
-
-            return render(request, 'dashboard.html', {
-                'listings': listings,
-                'form': form,
-                'cform': cform,
-                'slistings': slistings,
-                'messages': messages_list,
-                'no_results_message': no_results_message,
-                'id': id,  # Pass id for conditional form handling in template
-            })
-
-except Exception:
-    HttpResponseForbidden("You do not have permission to access this page.")
-
-
+    return render(request, 'dashboard.html', {
+        'listings': listings,
+        'form': form,
+        'cform': cform,
+        'slistings': slistings,
+        'messages': messages_list,
+        'no_results_message': no_results_message,
+        'id': id,
+    })
 
 @login_required_with_message
 def delete_listing(request, id):
