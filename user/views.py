@@ -411,7 +411,7 @@ def send_email_for_notification(sender, instance, created, **kwargs):
             # Check if the recipient is offline
             if not recipient.last_active or recipient.last_active < offline_threshold:
                 # Generate a link to view the notification
-                notification_url = reverse('notification_detail', args=[instance.id])  # Replace with your notification view name
+                notification_url = reverse('notifications_page')  # Replace with your notification view name
 
                 subject = "New Notification Alert"
                 body = f"""
@@ -419,7 +419,7 @@ def send_email_for_notification(sender, instance, created, **kwargs):
 
                 You have a new notification:
 
-                "{instance.content}"
+                "{instance.message}"
 
                 Click the link below to view the notification:
                 {notification_url}

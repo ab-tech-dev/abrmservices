@@ -1,9 +1,9 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 import hashlib
 from abrmservices.models import Listing
-from datetime import datetime
 
 User = get_user_model()
 
@@ -14,7 +14,6 @@ class Wallet(models.Model):
 
     def __str__(self):
         return f"Wallet for {self.user.name} - Balance: {self.balance}"
-
 
 
 class WalletTransaction(models.Model):
@@ -34,13 +33,12 @@ class WalletTransaction(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.transaction_hash:
-            raw_data = f"{self.wallet.user.id}{self.amount}{self.transaction_type}{datetime.now()}"
+            raw_data = f"{self.wallet.user.id}{self.amount}{self.transaction_type}{timezone.now()}"
             self.transaction_hash = hashlib.sha256(raw_data.encode()).hexdigest()
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.transaction_type.capitalize()} - {self.amount}"
-
 
 
 class AuditLog(models.Model):
@@ -69,7 +67,7 @@ class Transaction(models.Model):
     property = models.ForeignKey(Listing, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='initiated')
-    created_at = models.DateTimeField(default=datetime.now)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -97,7 +95,7 @@ class Escrow(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.transaction_hash:
-            raw_data = f"{self.buyer.id}{self.seller.id}{self.amount}{datetime.now()}"
+            raw_data = f"{self.buyer.id}{self.seller.id}{self.amount}{timezone.now()}"
             self.transaction_hash = hashlib.sha256(raw_data.encode()).hexdigest()
         super().save(*args, **kwargs)
 
