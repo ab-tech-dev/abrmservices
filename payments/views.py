@@ -33,12 +33,11 @@ from django.db.models import F
 # Payment initiation view
 @login_required
 @ensure_csrf_cookie
-def fund_wallet(request):
+def fund_wallet(request, amount, listing_id):
     if request.method == "POST":
         try:
-            data = request.POST
-            amount = Decimal(data.get("amount", "0"))
-            listing_id = data.get("listing_id")
+            amount = Decimal(amount)
+            listing_id = listing_id
 
             if amount <= 0:
                 messages.error(request, "Invalid amount specified.")
@@ -169,35 +168,35 @@ def buy_property(request, listing_id):
             if wallet.balance < amount:
                 shortfall = amount - wallet.balance
                 return fund_wallet(request, amount=shortfall, listing_id=listing_id)
+            elif wallet.balance >= amount:
+                tracking_id = f"TX_{request.user.id}_{listing.id}_{int(datetime.now().timestamp())}"
 
-            tracking_id = f"TX_{request.user.id}_{listing.id}_{int(datetime.now().timestamp())}"
+                seller_user = get_object_or_404(User, email=listing.realtor)
+                transaction = Transaction.objects.create(
+                    tracking_id=tracking_id,
+                    buyer=request.user,
+                    seller=seller_user,
+                    property=listing,
+                    amount=amount,
+                )
 
-            seller_user = get_object_or_404(User, email=listing.realtor)
-            transaction = Transaction.objects.create(
-                tracking_id=tracking_id,
-                buyer=request.user,
-                seller=seller_user,
-                property=listing,
-                amount=amount,
-            )
+                escrow_response = initiate_escrow(request, transaction)
+                if escrow_response['status'] == 'error':
+                    logger.error("Failed to initiate payment from wallet.")
+                    messages.error(request, "Failed to initiate payment from wallet.")
+                    return redirect('housing')
 
-            escrow_response = initiate_escrow(request, transaction)
-            if escrow_response['status'] == 'error':
-                logger.error("Failed to initiate payment from wallet.")
-                messages.error(request, "Failed to initiate payment from wallet.")
+                Notification.objects.create(
+                    user=request.user,
+                    message=f"Please confirm your transaction for {listing.title}. <a href='/buyer-confirm/{transaction.id}/'>Click here</a>"
+                )
+                Notification.objects.create(
+                    user=seller_user,
+                    message=f"Please confirm the transaction for {listing.title}. <a href='/seller-confirm/{transaction.id}/'>Click here</a>"
+                )
+
+                messages.success(request, "Transaction successful! Please confirm in notifications.")
                 return redirect('housing')
-
-            Notification.objects.create(
-                user=request.user,
-                message=f"Please confirm your transaction for {listing.title}. <a href='/buyer-confirm/{transaction.id}/'>Click here</a>"
-            )
-            Notification.objects.create(
-                user=seller_user,
-                message=f"Please confirm the transaction for {listing.title}. <a href='/seller-confirm/{transaction.id}/'>Click here</a>"
-            )
-
-            messages.success(request, "Transaction successful! Please confirm in notifications.")
-            return redirect('housing')
 
         return JsonResponse({"status": "error", "message": "Invalid request method."})
     except Exception as e:

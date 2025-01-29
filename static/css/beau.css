@@ -286,7 +286,7 @@ body {
     width: 100%;
     background-color: var(--white);
     padding: 0;
-    max-height: fit-content;
+    max-height: 0;
     overflow: hidden;
     visibility: visible;
     transition: .25s var(--cubic-out);
@@ -525,6 +525,12 @@ body {
 .service-card .card-text{
     line-height: 1.6;
 }
+
+/*========== Input Styling =========*/
+
+
+/* styles if JS activated */
+
 
 /*========== PROPERTIES =========*/
 

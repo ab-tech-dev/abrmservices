@@ -309,11 +309,6 @@
                                         <!-- Realtor Email Field -->
                                         <div class="strt" style="gap: 2rem;">
                                             <div class="row-container">
-                                                <label for="{{ cform.realtor.id_for_label }}">Realtor Email:</label>
-                                                <p>{{ cform.realtor.value }}</p> <!-- Display only -->
-                                                {{ cform.realtor.as_hidden }}     <!-- Hidden input to hold the value -->
-                                            </div>
-                                            <div class="row-container">
                                                 <label for="{{ cform.title.id_for_label }}">Title:</label>
                                                 {{ cform.title }}
                                             </div>
@@ -321,10 +316,6 @@
 
                                         <!-- Slug and Location Fields -->
                                         <div class="strt" style="gap: 2rem;">
-                                            <div class="row-container">
-                                                <label for="{{ cform.slug.id_for_label }}">Slug:</label>
-                                                {{ cform.slug }}
-                                            </div>
                                             <div class="row-container">
                                                 <label for="{{ cform.location.id_for_label }}">Location:</label>
                                                 {{ cform.location }}
@@ -521,7 +512,7 @@
                             
                                 <div class="card-content">
                                     <h3 class="h3">
-                                        <a href="{% url 'listing_detail' property.slug %}" class="card-title">{{ property.title }}</a>
+                                        <a href="{% url 'listing_detail' property.id %}" class="card-title">{{ property.title }}</a>
                                     </h3>
                                     
                                     <ul class="card-list">
@@ -585,7 +576,7 @@
     
                 <div class="card-content">
                     <h3 class="h3">
-                        <a href="{% url 'listing_detail' property.slug %}" class="card-title">{{ property.title }}</a>
+                        <a href="{% url 'listing_detail' property.id %}" class="card-title">{{ property.title }}</a>
                     </h3>
                     
                     <ul class="card-list">
@@ -683,7 +674,6 @@
                                 // Map data to fields
                                 document.querySelector(`#edit-form-${propertyId} #id_realtor`).value = data.realtor;
                                 document.querySelector(`#edit-form-${propertyId} #id_title`).value = data.title;
-                                document.querySelector(`#edit-form-${propertyId} #id_slug`).value = data.slug;
                                 document.querySelector(`#edit-form-${propertyId} #id_location`).value = data.location;
                                 document.querySelector(`#edit-form-${propertyId} #id_zipcode`).value = data.zipcode;
                                 document.querySelector(`#edit-form-${propertyId} #id_description`).value = data.description;
@@ -783,7 +773,6 @@
                             .then((data) => {
                                 document.querySelector(`#edit-form-${propertyId} #id_realtor`).value = data.realtor;
                                 document.querySelector(`#edit-form-${propertyId} #id_title`).value = data.title;
-                                document.querySelector(`#edit-form-${propertyId} #id_slug`).value = data.slug;
                                 document.querySelector(`#edit-form-${propertyId} #id_location`).value = data.location;
                                 document.querySelector(`#edit-form-${propertyId} #id_zipcode`).value = data.zipcode;
                                 document.querySelector(`#edit-form-${propertyId} #id_description`).value = data.description;

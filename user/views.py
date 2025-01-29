@@ -2,11 +2,10 @@ from .models import Notification
 from django.contrib.auth import get_user_model
 User = get_user_model()
 from django.shortcuts import render
-
+from .models import UserAccount
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils.timezone import now
@@ -14,6 +13,372 @@ from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
 from .models import Chat, ChatMessage
+from django.shortcuts import redirect, render
+from django.contrib.auth import login, authenticate, logout
+from django.shortcuts import redirect, render
+from django.contrib.auth import login, authenticate
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from google.auth.exceptions import GoogleAuthError
+import google.auth.transport.requests
+import google.oauth2.credentials
+import google_auth_oauthlib.flow
+
+from ABRMS import settings
+from google_auth_oauthlib.flow import Flow
+from google.auth.transport.requests import Request
+from google.oauth2 import id_token
+from django.shortcuts import redirect, render
+from django.contrib.auth import login
+import os
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Allow insecure transport for development
+
+import re
+import logging
+import geoip2.database
+from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+from django.utils.timezone import now
+from django.views.decorators.csrf import csrf_protect
+from django_ratelimit.decorators import ratelimit
+from django.core.mail import send_mail
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
+from .models import UserAccount, FailedLoginAttempt
+
+logger = logging.getLogger(__name__)
+
+# Security settings
+MAX_LOGIN_ATTEMPTS = 5  # Lock account after 5 failed attempts
+LOCKOUT_DURATION = 15  # Lockout duration in minutes
+
+def get_client_ip(request):
+    """Securely retrieve the user's IP address."""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+from google_auth_oauthlib.flow import Flow
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+SCOPES = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'openid'
+]
+
+def google_auth_init(request, action):
+    """
+    Initialize Google OAuth2 flow for sign-in or sign-up.
+    """
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": settings.GOOGLE_OAUTH2_CLIENT_ID,
+                "client_secret": settings.GOOGLE_OAUTH2_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [settings.GOOGLE_OAUTH2_REDIRECT_URI],
+            }
+        },
+        scopes=SCOPES,
+    )
+    flow.redirect_uri = settings.GOOGLE_OAUTH2_REDIRECT_URI
+
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true',
+        prompt='select_account'
+    )
+
+    request.session['google_oauth2_state'] = state
+    request.session['google_oauth2_action'] = action  # Track if it's sign-in or sign-up
+
+    return redirect(authorization_url)
+
+
+def google_auth_callback(request):
+    """
+    Handle Google OAuth2 callback for sign-in or sign-up.
+    """
+    state = request.session.get('google_oauth2_state')
+    action = request.session.get('google_oauth2_action')  # 'signin' or 'signup'
+
+    if request.GET.get('state') != state:
+        messages.error(request, "Invalid state parameter. Please try again.")
+        return redirect('housing')
+
+    try:
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": settings.GOOGLE_OAUTH2_CLIENT_ID,
+                    "client_secret": settings.GOOGLE_OAUTH2_CLIENT_SECRET,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": [settings.GOOGLE_OAUTH2_REDIRECT_URI],
+                }
+            },
+            scopes=SCOPES,
+            state=state,
+        )
+        flow.redirect_uri = settings.GOOGLE_OAUTH2_REDIRECT_URI
+
+        # Fetch access token
+        flow.fetch_token(authorization_response=request.build_absolute_uri())
+        credentials = flow.credentials
+
+        # Validate ID token
+        idinfo = id_token.verify_oauth2_token(
+            credentials.id_token,
+            Request(),
+            settings.GOOGLE_OAUTH2_CLIENT_ID,
+        )
+
+        # Extract user details
+        email = idinfo['email']
+        first_name = idinfo.get('given_name', '')
+        last_name = idinfo.get('family_name', '')
+
+        # Handle sign-in or sign-up differently
+        if action == "signup":
+            # Ensure user doesn't already exist before signing up
+            if UserAccount.objects.filter(email=email).exists():
+                messages.error(request, "An account with this email already exists. Please sign in.")
+                return redirect('housing')
+
+            # Create new user
+            user = UserAccount.objects.create(
+                email=email,
+                name=f"{first_name} {last_name}",
+                google_authenticated=True,
+                is_active=True  # Mark as active since Google verified email
+            )
+            user.set_unusable_password()  # No password required for Google login
+            user.save()
+            login(request, user)
+            messages.success(request, "Account created successfully!")
+            return redirect('housing')
+
+        elif action == "signin":
+            # Check if user exists
+            user = UserAccount.objects.filter(email=email).first()
+            # ✅ Brute Force Protection
+            ip_address = get_client_ip(request)
+            failed_attempts = FailedLoginAttempt.objects.filter(email=email, ip_address=ip_address)
+
+            if failed_attempts.count() >= MAX_LOGIN_ATTEMPTS:
+                last_attempt = failed_attempts.last()
+                if (now() - last_attempt.timestamp).seconds < (LOCKOUT_DURATION * 60):
+                    messages.error(request, 'Too many failed attempts. Try again later.')
+                    return redirect('/housing/#login')
+                else:
+                    failed_attempts.delete()  # Reset failed attempts after lockout duration
+
+            if not user:
+                messages.error(request, "No account found. Please sign up first.")
+                return redirect('housing')
+            # ✅ Log Login Details with IP Geolocation
+
+            user.last_login_ip = ip_address
+            user.last_login_agent = request.META.get('HTTP_USER_AGENT', '')
+            geoip_db_path = os.path.join(settings.BASE_DIR, 'static', 'GeoLite2-City.mmdb')
+
+            try:
+                with geoip2.database.Reader(geoip_db_path) as reader:
+                    geo_data = reader.city(ip_address)
+                    user.last_login_location = f"{geo_data.city.name}, {geo_data.country.name}"
+            except Exception as e:
+                logger.error(f"Error fetching geo data for IP {ip_address}: {str(e)}")
+                user.last_login_location = "Unknown"
+            user.save()
+            # Log the user in
+            login(request, user)
+            messages.success(request, f"Welcome back, {user.name}!")
+            return redirect('housing')
+
+        else:
+            messages.error(request, "Invalid authentication action. Please try again.")
+            return redirect('housing')
+
+    except Exception as e:
+        print(e)
+        messages.error(request, f"Google authentication failed: {str(e)}")
+        return redirect('housing')
+
+
+
+@csrf_protect
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)  # Prevents spam
+def register(request):
+    """Secure user registration with email verification and strong password validation."""
+    if request.method == 'POST':
+        name = request.POST.get('name').strip()
+        email = request.POST.get('email', '').strip().lower()
+        password = request.POST.get('password')
+        re_password = request.POST.get('re_password')
+        is_realtor = request.POST.get('is_realtor') == 'on'
+
+        # ✅ Validate Email Format
+        try:
+            validate_email(email)
+        except ValidationError:
+            messages.error(request, 'Invalid email format.')
+            return redirect('housing')
+
+        # ✅ Enforce Strong Password Policy
+        if len(password) < 8 or not re.search(r'\d', password) or not re.search(r'[A-Za-z]', password):
+            messages.error(request, 'Password must be at least 8 characters and include both letters and numbers.')
+            return redirect('housing')
+
+        if password != re_password:
+            messages.error(request, 'Passwords do not match.')
+            return redirect('housing')
+
+        # ✅ Prevent Duplicate Email
+        if UserAccount.objects.filter(email=email).exists():
+            messages.error(request, 'Email already exists.')
+            return redirect('housing')
+
+        # ✅ Create User with Email Verification
+        user = (
+            UserAccount.objects.create_realtor(email=email, name=name, password=password)
+            if is_realtor
+            else UserAccount.objects.create_user(email=email, name=name, password=password)
+        )
+
+        user.is_active = False  # Prevent login until email is verified
+        user.save()
+        send_verification_email(user,request)
+
+        messages.success(request, 'Account created! Please verify your email before logging in.')
+        return redirect('housing')
+
+    return redirect('housing')
+
+
+@csrf_protect
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)  # Prevents brute-force attacks
+def user_login(request):
+    """Secure user login with brute-force protection and IP logging."""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip().lower()
+        password = request.POST.get('password')
+
+        # ✅ Check If User Exists
+        user = UserAccount.objects.filter(email=email).first()
+        if not user:
+            messages.error(request, 'Invalid credentials.')
+            return redirect('/housing/#login')
+
+        # ✅ Prevent Login If Email Not Verified
+        if not user.is_active:
+            messages.error(request, 'Please verify your email before logging in.')
+            return redirect('/housing/#login')
+
+        # ✅ Brute Force Protection
+        ip_address = get_client_ip(request)
+        failed_attempts = FailedLoginAttempt.objects.filter(email=email, ip_address=ip_address)
+
+        if failed_attempts.count() >= MAX_LOGIN_ATTEMPTS:
+            last_attempt = failed_attempts.last()
+            if (now() - last_attempt.timestamp).seconds < (LOCKOUT_DURATION * 60):
+                messages.error(request, 'Too many failed attempts. Try again later.')
+                return redirect('/housing/#login')
+            else:
+                failed_attempts.delete()  # Reset failed attempts after lockout duration
+
+        # ✅ Authenticate User
+        user = authenticate(request, email=email, password=password)
+        if user:
+            login(request, user)
+
+            # ✅ Secure Session Settings
+            request.session.set_expiry(3600)  # 1-hour session expiration
+
+            # ✅ Log Login Details with IP Geolocation
+            user.last_login_ip = ip_address
+            user.last_login_agent = request.META.get('HTTP_USER_AGENT', '')
+            geoip_db_path = os.path.join(settings.BASE_DIR, 'static', 'GeoLite2-City.mmdb')
+
+            try:
+                with geoip2.database.Reader(geoip_db_path) as reader:
+                    geo_data = reader.city(ip_address)
+                    user.last_login_location = f"{geo_data.city.name}, {geo_data.country.name}"
+            except Exception as e:
+                logger.error(f"Error fetching geo data for IP {ip_address}: {str(e)}")
+                user.last_login_location = "Unknown"
+
+            user.save()
+
+            # ✅ Clear Failed Login Attempts
+            failed_attempts.delete()
+
+            messages.success(request, 'Login successful!')
+            return redirect('housing')
+        else:
+            # ✅ Log Failed Login Attempt
+            FailedLoginAttempt.objects.create(email=email, ip_address=ip_address, timestamp=now())
+            messages.error(request, 'Invalid credentials.')
+            return redirect('/housing/#login')
+
+    return redirect('housing')
+
+def send_verification_email(user, request):
+    """Send an email verification link to the user."""
+    
+    domain = request.get_host()  # Dynamically fetch domain
+    protocol = "https" if request.is_secure() else "http"
+
+    token = default_token_generator.make_token(user)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    verification_link = f"{protocol}://{domain}/verify-email/{uid}/{token}/"
+
+    send_mail(
+        'Verify Your Email',
+        f'Click the link to verify your email: {verification_link}',
+        'abrelocationservices@gmail.com',
+        [user.email],
+        fail_silently=False,
+    )
+
+
+
+
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_decode
+
+
+
+def verify_email(request, uidb64, token):
+    """Handles email verification when the user clicks the link."""
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = UserAccount.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, UserAccount.DoesNotExist):
+        user = None
+
+    if user and default_token_generator.check_token(user, token):
+        user.is_active = True  # Activate account
+        user.save()
+        messages.success(request, "Email verified successfully! You can now log in.")
+        return redirect('/housing/#login')
+    else:
+        messages.error(request, "Invalid or expired verification link.")
+        return redirect('/housing/')
+
+
+def user_logout(request):
+    logout(request)
+    messages.success(request, 'Logged out successfully!')
+    return redirect('housing')
 
 
 # Custom login_required decorator with message support
@@ -45,20 +410,10 @@ def mydashboard(request, id=None):
 
     # Edit existing listing or create a new one
     if id:
-        listing = get_object_or_404(Listing, id=id, realtor=user.email)
-        cform = ListingForm(request.POST or None, request.FILES or None, instance=listing)
+        listing = get_object_or_404(Listing, id=user.id, realtor=user)
+        cform = ListingForm(request.POST, request.FILES or None, instance=listing)
 
         if request.method == 'POST' and cform.is_valid():
-            # Retain existing photos if no new file is uploaded
-            if not cform.cleaned_data.get('main_photo'):
-                cform.instance.main_photo = listing.main_photo
-            if not cform.cleaned_data.get('photo_1'):
-                cform.instance.photo_1 = listing.photo_1
-            if not cform.cleaned_data.get('photo_2'):
-                cform.instance.photo_2 = listing.photo_2
-            if not cform.cleaned_data.get('photo_3'):
-                cform.instance.photo_3 = listing.photo_3
-
             cform.save()
             Notification.objects.create(
                 user=user,
@@ -71,14 +426,14 @@ def mydashboard(request, id=None):
         cform = ListingForm(request.POST or None, request.FILES or None)
         if request.method == 'POST' and cform.is_valid():
             new_listing = cform.save(commit=False)
-            new_listing.realtor = user.email
+            new_listing.realtor = user
             new_listing.save()
             messages.success(request, 'Listing created successfully')
             return redirect('mydashboard')
 
     # Fetch listings for realtor or superuser
     if user.is_realtor or user.is_superuser:
-        listings = Listing.objects.filter(realtor=user.email)
+        listings = Listing.objects.filter(realtor=user)
 
         # Handle search form submission
         form = SearchForm(request.POST or None)
@@ -89,7 +444,7 @@ def mydashboard(request, id=None):
             min_price = form.cleaned_data.get('min_price')
             max_price = form.cleaned_data.get('max_price')
 
-            query = Q(realtor=user.email)  # Always filter by the realtor's email
+            query = Q(realtor=user)  # Always filter by the realtor's email
 
             if location:
                 query &= Q(location__icontains=location)
@@ -130,7 +485,7 @@ def mydashboard(request, id=None):
 
 @login_required_with_message
 def delete_listing(request, id):
-    listing = get_object_or_404(Listing, id=id, realtor=request.user.email)
+    listing = get_object_or_404(Listing, id=id, realtor=request.user)
     
     if request.method == 'POST':
         listing.delete()
@@ -145,7 +500,7 @@ from django.shortcuts import get_object_or_404
 
 @login_required_with_message
 def get_listing_data(request, property_id):
-    listing = get_object_or_404(Listing, id=property_id, realtor=request.user.email)
+    listing = get_object_or_404(Listing, id=property_id, realtor=request.user)
     data = {
         'realtor': listing.realtor,
         'title': listing.title,

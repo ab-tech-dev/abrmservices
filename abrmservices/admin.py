@@ -3,10 +3,10 @@ from .models import Listing
 
 class ListingAdmin(admin.ModelAdmin):
     using = 'default'
-    list_display = ('id', 'realtor', 'title', 'slug',)
-    list_display_links = ('id', 'realtor', 'title', 'slug',)
+    list_display = ('id', 'realtor')
+    list_display_links = ('id', 'realtor',)
     list_filter = ('realtor',)
-    search_fields = ('title', 'discription',)
+    search_fields = ('discription',)
     list_per_page = 25
 
     def save_model(self, request, obj, form,change ):

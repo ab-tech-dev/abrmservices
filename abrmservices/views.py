@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect
 from .models import Listing
-
-
+from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from django.core.mail import send_mail, EmailMessage
 from django import forms
 import datetime
+from django.contrib.auth import get_user_model
+User = get_user_model()
 # from .models import House
 # Create your views here.
 # from dotenv import load_dotenv
@@ -111,66 +112,51 @@ class SearchForm(forms.Form):
         widget=forms.Select(attrs={'class': 'dropdown-list'})
     )
 
-
-
+from django import forms
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Submit, Field, Layout
+from .models import Listing, Photo
 
 class ListingForm(forms.ModelForm):
     SALE_TYPE_CHOICES = [
         ('For Sale', 'For Sale'),
         ('For Rent', 'For Rent'),
     ]
-
+    
     HOME_TYPE_CHOICES = [
         ('house', 'House'),
         ('apartment', 'Apartment'),
         ('condo', 'Condo'),
         ('townhome', 'Townhome'),
     ]
+    
+    # Fields to handle multiple uploads
+    main_photo = forms.ImageField(label='Main Photo')
+    additional_photos = forms.ImageField(widget=forms.ClearableFileInput(attrs={}), required=False)
+    video = forms.FileField(required=False)
+    bathroom_photos = forms.ImageField(widget=forms.ClearableFileInput(attrs={}), required=False)
+    toilet_photos = forms.ImageField(widget=forms.ClearableFileInput(attrs={}), required=False)
+
+
 
     class Meta:
         model = Listing
         fields = [
-            'realtor', 'title', 'slug', 'location', 'zipcode',
-            'description', 'price', 'bedrooms', 'bathrooms', 'sale_type',
-            'home_type', 'main_photo', 'photo_1', 'photo_2', 'photo_3',
-            'is_published', 'date_created'
+            'title', 'location', 'bedrooms', 'bathrooms', 'sale_type', 
+            'home_type', 'main_photo', 'video', 'price', 'additional_photos', 
+            'bathroom_photos', 'toilet_photos'
         ]
 
-    realtor = forms.EmailField(
-        label='Realtor Email',
-        widget=forms.EmailInput(attrs={
-            'placeholder': 'Enter Realtor Email',
-            'required': 'required',
-            'class': 'form-control',
-            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
-        })
-    )
-
+    # Basic fields with crispy_forms styling
     title = forms.CharField(
         label='Title',
         max_length=255,
         widget=forms.TextInput(attrs={
-            'placeholder': 'Enter Title',
+            'placeholder': 'Enter property description',
             'class': 'form-control',
             'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
         })
     )
-
-    slug = forms.CharField(
-        label='Slug',
-        max_length=255,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Unique Identifier (Slug)',
-            'class': 'form-control',
-            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
-        })
-    )
-
-    def clean_slug(self):
-        slug = self.cleaned_data.get('slug')
-        if ' ' in slug:
-            raise forms.ValidationError("Slug cannot contain spaces.")
-        return slug.replace(' ', '-').lower()
 
     location = forms.CharField(
         label='Location',
@@ -183,30 +169,57 @@ class ListingForm(forms.ModelForm):
         })
     )
 
-    zipcode = forms.CharField(
-        label='Zip Code',
-        max_length=20,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Enter Zip Code',
+    bedrooms = forms.IntegerField(
+        label='Bedrooms',
+        widget=forms.NumberInput(attrs={
+            'placeholder': 'Number of Bedrooms',
             'class': 'form-control',
             'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
         })
     )
 
-    def clean_zipcode(self):
-        zipcode = self.cleaned_data.get('zipcode')
-        if not zipcode.isnumeric() or len(zipcode) < 5:
-            raise forms.ValidationError("Zip code must be at least 5 digits long and contain only numbers.")
-        return zipcode
-
-    description = forms.CharField(
-        label='Description',
-        widget=forms.Textarea(attrs={
-            'rows': 5,
-            'cols': 17,
-            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: auto;font-size: 16px;',
-            'placeholder': 'Enter Description',
+    bathrooms = forms.IntegerField(
+        label='Bathrooms',
+        widget=forms.NumberInput(attrs={
+            'placeholder': 'Number of Bathrooms',
             'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
+
+    sale_type = forms.ChoiceField(
+        label='Sale Type',
+        choices=SALE_TYPE_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
+
+    home_type = forms.ChoiceField(
+        label='Home Type',
+        choices=HOME_TYPE_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
+        })
+    )
+
+    # Photo and Video fields with 'multiple' support
+    main_photo = forms.ImageField(
+        label='Main Photo',
+        widget=forms.FileInput(attrs={
+            'class': 'form-control-file',
+            'style': 'margin-top: 5px;',
+        })
+    )
+
+    video = forms.FileField(
+        label='Video File (Optional)',
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control-file',
+            'style': 'margin-top: 5px;',
         })
     )
 
@@ -227,109 +240,25 @@ class ListingForm(forms.ModelForm):
             raise forms.ValidationError("Price must be greater than zero.")
         return price
 
-    bedrooms = forms.IntegerField(
-        label='Bedrooms',
-        widget=forms.NumberInput(attrs={
-            'placeholder': 'Number of Bedrooms',
-            'class': 'form-control',
-            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
-        })
-    )
-
-    def clean_bedrooms(self):
-        bedrooms = self.cleaned_data.get('bedrooms')
-        if bedrooms < 0:
-            raise forms.ValidationError("Number of bedrooms cannot be negative.")
-        return bedrooms
-
-    bathrooms = forms.IntegerField(
-        label='Bathrooms',
-        widget=forms.NumberInput(attrs={
-            'placeholder': 'Number of Bathrooms',
-            'class': 'form-control',
-            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
-        })
-    )
-
-    def clean_bathrooms(self):
-        bathrooms = self.cleaned_data.get('bathrooms')
-        if bathrooms < 0:
-            raise forms.ValidationError("Number of bathrooms cannot be negative.")
-        return bathrooms
-
-    sale_type = forms.ChoiceField(
-        label='Sale Type',
-        choices=SALE_TYPE_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
-        })
-    )
-
-    home_type = forms.ChoiceField(
-        label='Home Type',
-        choices=HOME_TYPE_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
-        })
-    )
-
-    main_photo = forms.ImageField(
-        label='Main Photo',
-        widget=forms.FileInput(attrs={
-            'class': 'form-control-file',
-            'style': 'margin-top: 5px;',
-        })
-    )
-
-    photo_1 = forms.ImageField(
-        label='Photo 1',
-        required=False,
-        widget=forms.FileInput(attrs={
-            'class': 'form-control-file',
-            'style': 'margin-top: 5px;',
-        })
-    )
-
-    photo_2 = forms.ImageField(
-        label='Photo 2',
-        required=False,
-        widget=forms.FileInput(attrs={
-            'class': 'form-control-file',
-            'style': 'margin-top: 5px;',
-        })
-    )
-
-    photo_3 = forms.ImageField(
-        label='Photo 3',
-        required=False,
-        widget=forms.FileInput(attrs={
-            'class': 'form-control-file',
-            'style': 'margin-top: 5px;',
-        })
-    )
-
-    is_published = forms.BooleanField(
-        label='Is Published?',
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input',
-            'style': 'margin-top: 10px;',
-        })
-    )
-
-    date_created = forms.DateTimeField(
-        label='Date Created',
-        initial=datetime.datetime.now,
-        widget=forms.DateTimeInput(attrs={
-            'placeholder': 'YYYY-MM-DD HH:MM:SS',
-            'class': 'form-control',
-            'style': 'padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;',
-            'value': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        }),
-    )
-
+    # Custom form helper with crispy_forms layout
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Field('title'),
+            Field('location'),
+            Field('bedrooms'),
+            Field('bathrooms'),
+            Field('sale_type'),
+            Field('home_type'),
+            Field('main_photo'),
+            Field('video'),
+            Field('price'),
+            Field('additional_photos', data_multiple_files="true"),  # Allow multiple files for additional_photos
+            Field('bathroom_photos', data_multiple_files="true"),  # Multiple bathroom photos
+            Field('toilet_photos', data_multiple_files="true"),  # Multiple toilet photos
+            Submit('submit', 'Submit')
+        )
 
 from django.shortcuts import render, redirect
 from user.forms import RegisterForm, LoginForm
@@ -338,213 +267,154 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.db.models import Q
 
-
 def housing(request):
-    properties = Listing.objects.filter(is_published=True)
+    # Initial setup
+    properties = Listing.objects.all()
     no_results_message = ''
     listings = Listing.objects.none()
-    user = request.user
-        # Get chats involving the current user
-    # In your view
-    if request.user.is_authenticated:
-        user = request.user
+    user = request.user if request.user.is_authenticated else None
 
-        # Get unread notifications for the user
+    # Notifications and unread messages
+    if user:
         unread_notifications = Notification.objects.filter(user=user, is_read=False)
-
-        # Count the number of unread notifications
         unread_notifications_count = unread_notifications.count()
-    else:
-        unread_notifications_count = 0
 
-    
-    if request.user.is_authenticated:
-        user = request.user
         chats = Chat.objects.filter(Q(user1=user) | Q(user2=user))
-        
-        # Count unread messages for the user
         unread_messages = ChatMessage.objects.filter(
             ~Q(sender=user),
             chat__in=chats,
             read=False
         )
-
-                # Get the distinct senders of these unread messages
         unread_senders = unread_messages.values('sender').distinct()
-
-        # The number of distinct users who have unread messages
         unread_users_count = unread_senders.count()
-
     else:
-        chats = []  # Or handle this case differently
-        unread_users_count = []
-
-
+        unread_notifications_count = 0
+        unread_users_count = 0
+        chats = []
 
     # Forms
     form = SearchForm(request.POST or None)
-    cform = ListingForm(request.POST, request.FILES or None)
+    cform = ListingForm(request.POST, request.FILES)
     register_form = RegisterForm(request.POST or None)
     login_form = LoginForm(request.POST or None)
 
-    # Logout Process
-    if request.method == 'POST' and 'logout' in request.POST:
-        logout(request)
-        messages.success(request, 'Logged out successfully')
-        return redirect('housing')  # Redirect to the housing page after logout
 
- # Debug: Check the data received from the form
+    if request.method == 'POST':
+        if cform.is_valid():
+            cform.instance.realtor =User(id=request.user.id)  # or another relevant user object
 
-    if register_form.is_valid():
+            # Handle the file uploads (if needed)
+            cform.main_photo = request.FILES.get('main_photo')
+            cform.video = request.FILES.get('video')
 
-            # Extract form data
-            name = register_form.cleaned_data['name']
-            email = register_form.cleaned_data['email'].lower()
-            password = register_form.cleaned_data['password']
-            re_password = register_form.cleaned_data['re_password']
-            is_realtor = register_form.cleaned_data['is_realtor']
+            listing = cform.save(commit=False)  # Save the form instance without committing
+            listing.realtor = request.user  # Assign realtor
+            listing.save()  # Save to generate the instance ID
 
-            print(f"Extracted data - Name: {name}, Email: {email}, Is Realtor: {is_realtor}")  # Debug
+            # Handle the file uploads for ManyToMany fields
+            bathroom_photos = request.FILES.getlist('bathroom_photos')
+            for photo in bathroom_photos:
+                photo_instance = Photo.objects.create(image=photo)
+                listing.bathroom_photos.add(photo_instance)  # Associate photo with listing
 
-            # Check passwords match
-            if password != re_password:
-                print("Passwords do not match!")  # Debug: Log mismatch
-                messages.error(request, 'Passwords do not match')
-                return redirect('register')
+            toilet_photos = request.FILES.getlist('toilet_photos')
+            for photo in toilet_photos:
+                photo_instance = Photo.objects.create(image=photo)
+                listing.toilet_photos.add(photo_instance)
 
-            # Validate email uniqueness
-            if UserAccount.objects.filter(email=email).exists():
-                messages.error(request, 'Email already exists')
-                return redirect('housing')
+            additional_photos = request.FILES.getlist('additional_photos')
+            for photo in additional_photos:
+                photo_instance = Photo.objects.create(image=photo)
+                listing.additional_photos.add(photo_instance)
 
-            # Create user or realtor account
-            if is_realtor:
-                print("Creating a realtor account...")  # Debug
-                user = UserAccount.objects.create_realtor(name=name, email=email, password=password)
-            else:
-                print("Creating a user account...")  # Debug
-                user = UserAccount.objects.create_user(name=name, email=email, password=password)
+            listing.save()
+            
+            messages.success(request, "Listing created successfully!")
+            Notification.objects.create(
+            user=user,
+            message=f"Your listing '{listing.title}' has been successfully created."
+            )
+            # cform.instance.realtor = request.user
 
-            user.save()
-            print(f"User account for {email} created successfully!")  # Debug: Log successful creation
-            messages.success(request, 'Account created successfully')
+            # cform.main_photo = request.FILES.get('main_photo')
+            # cform.video = request.FILES.get('video')
+            # # Handle room_photos
+            # additional_photos = request.FILES.getlist('additional_photos')
+            # for photo in additional_photos:
+            #     photo_instance = Photo.objects.create(image=photo)
+            #     cform.additional_photos.add(photo_instance)
+
+            # # Handle bathroom_photos
+            # bathroom_photos = request.FILES.getlist('bathroom_photos')
+            # for photo in bathroom_photos:
+            #     photo_instance = Photo.objects.create(image=photo)
+            #     cform.bathroom_photos.add(photo_instance)
+
+            # # Handle other_photos
+            # toilet_photos = request.FILES.getlist('toilet_photos')
+            # for photo in toilet_photos:
+            #     photo_instance = Photo.objects.create(image=photo)
+            #     cform.toilet_photos.add(photo_instance)
+
+            # cform.save()
+            # messages.success(request, "Listing created successfully!")
             return redirect('housing')
-
-
-
-    # # Registration Process
-    # if register_form.is_valid():
-    #     try:
-    #         name = register_form.cleaned_data['name']
-    #         email = register_form.cleaned_data['email'].lower()
-    #         password = register_form.cleaned_data['password']
-    #         re_password = register_form.cleaned_data['re_password']
-    #         # is_realtor = register_form.cleaned_data['is_realtor']
-
-    #         if password == re_password:
-    #             if not UserAccount.objects.filter(email=email).exists():
-    #                 # if is_realtor ==True:
-    #                 #     user = UserAccount.objects.create_realtor(name=name, email=email)
-    #                 # else:
-    #                 user = UserAccount.objects.create_user(name=name, email=email)
-    #                 user.set_password(password)
-    #                 user.save()
-    #                 messages.success(request, 'Account created successfully')
-    #                 return redirect('housing')
-    #             else:
-    #                 messages.error(request, 'Email already exists')
-    #         else:
-    #             messages.error(request, 'Passwords do not match')
-    #     except Exception as e:
-    #         messages.error(request, f'Error in registration: {e}')
-
-    if request.method == 'POST' and 'logout' in request.POST:
-        logout(request)
-        messages.success(request, 'Logged out successfully')
-        return redirect('housing') 
-
-    # Login Process
-    if login_form.is_valid():
-        email = login_form.cleaned_data['email'].lower()
-        password = login_form.cleaned_data['password']
-        user = authenticate(request, email=email, password=password)
-        if user:
-            login(request, user)
-            messages.success(request, 'Login successful')
-            return redirect('housing')  # Refresh the page to confirm login status
         else:
-            messages.error(request, 'Invalid credentials')
-            return redirect('/housing/#login')
+            cform = ListingForm()
+            messages.error(request, "Please correct the errors in the form.")
 
 
-    # Listing Form Process
-    if cform.is_valid():
-        listing = cform.save(commit=False)
-        listing.realtor = request.user.email  # Override realtor with logged-in user's email
-        listing.save()
 
-        messages.success(request, 'Listing saved successfully')
-        return redirect('housing')  # Redirect to the listing page after saving
-
-    if form.is_valid():  # Only process if the form is valid
+    # Search Form Process
+    if form.is_valid():
         location = form.cleaned_data['location']
-        home_type = form.cleaned_data.get('category')  # Get the home type (category from form)
-        search_description = form.cleaned_data.get('search')  # Get the search field description
-        min_price = form.cleaned_data.get('min_price')  # Get the minimum price from form
-        max_price = form.cleaned_data.get('max_price')  # Get the maximum price from form
+        home_type = form.cleaned_data.get('category')
+        search_description = form.cleaned_data.get('search')
+        min_price = form.cleaned_data.get('min_price')
+        max_price = form.cleaned_data.get('max_price')
 
-        # Filtering based on optional fields in the model
         query = Q()
-
         if location:
             query &= Q(location__icontains=location)
         if home_type:
-            query &= Q(home_type=home_type)  # Match home_type in Listing model
+            query &= Q(home_type=home_type)
         if search_description:
-            query |= Q(description__icontains=search_description)  # Match description
+            query |= Q(description__icontains=search_description)
         if min_price:
-            query &= Q(price__gte=int(min_price))  # price >= min_price
+            query &= Q(price__gte=int(min_price))
         if max_price:
-            query &= Q(price__lte=int(max_price))  # price <= max_price
+            query &= Q(price__lte=int(max_price))
 
-        # Retrieve additional query parameters from the model's attributes
-        sale_type = request.POST.get('sale_type')  # Check for `sale_type` field in GET parameters
-        bedrooms = request.POST.get('bedrooms')  # Check for `bedrooms` field in GET parameters
+        # Additional filters
+        sale_type = request.POST.get('sale_type')
+        bedrooms = request.POST.get('bedrooms')
 
         if sale_type:
-            query &= Q(sale_type=sale_type)  # Filter by sale_type if provided
+            query &= Q(sale_type=sale_type)
         if bedrooms:
             try:
-                query &= Q(bedrooms=int(bedrooms))  # Convert to int and filter by number of bedrooms
+                query &= Q(bedrooms=int(bedrooms))
             except ValueError:
-                pass  # Ignore invalid bedroom inputs for filtering
+                pass
 
-        # Print the query details to the terminal for debugging
-
-        # Execute query and get the filtered results
         listings = Listing.objects.filter(query).filter(is_published=True)
-
-        # Set no_results_message if no listings found
         if not listings.exists():
             no_results_message = "No results found."
 
-
-
-    # Pass no_results_message to the template context
+    # Pass data to template
     return render(request, 'index.html', {
         'form': form,
         'login_form': login_form,
         'register_form': register_form,
         'listings': listings,
-        'no_results_message': no_results_message,  # Pass the message to the template
+        'no_results_message': no_results_message,
         'cform': cform,
-        'is_logged_in': request.user.is_authenticated,  # Pass user authentication status
-        'unread_users_count' : unread_users_count,
+        'is_logged_in': request.user.is_authenticated,
+        'unread_users_count': unread_users_count,
         'properties': properties,
-        'unread_notifications_count' : unread_notifications_count,
-        'user' : user
+        'unread_notifications_count': unread_notifications_count,
+        'user': user,
     })
-
 
 def main(request):
     return render(request, 'main.html')

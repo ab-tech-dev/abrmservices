@@ -24,7 +24,9 @@ ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split('
 
 # Application definition
 
+
 INSTALLED_APPS = [
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -32,10 +34,36 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.postgres',
+    'django.contrib.sites',
     'user',
     'abrmservices',
     'payments',
+    'crispy_forms', 
 ]
+
+SCOPES = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'openid',
+]
+
+# Optional: Define login URL
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'housing'
+LOGOUT_REDIRECT_URL = 'housing'
+
+# Google OAuth2 credentials
+GOOGLE_OAUTH2_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
+GOOGLE_OAUTH2_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
+GOOGLE_OAUTH2_REDIRECT_URI = 'https://aa31-197-211-58-3.ngrok-free.app/auth/google/callback/'
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://aa31-197-211-58-3.ngrok-free.app",
+]
+
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'  # or 'bootstrap5', depending on your preference
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -47,7 +75,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'user.middleware.ActiveUserMiddleware',
-
 ]
 
 ROOT_URLCONF = 'ABRMS.urls'
@@ -68,37 +95,10 @@ TEMPLATES = [
     },
 ]
 
+
 WSGI_APPLICATION = 'ABRMS.wsgi.application'
 
-# DATABASES = {
-#     'default': {},  # Default can be left empty if unused
-
-#     # Users database
-#     'users': dj_database_url.parse(
-#         os.getenv('DATABASE_URL_USERS'),
-#         conn_max_age=600,
-#         ssl_require=True
-#     ),
-
-#     # ABRM Services database
-#     'abrmservices': dj_database_url.parse(
-#         os.getenv('DATABASE_URL_ABRMSERVICES'),
-#         conn_max_age=600,
-#         ssl_require=True
-#     ),
-# }
-
-# # Database
-
-# DATABASES = {
-#     'default': dj_database_url.parse(
-#         os.getenv('DATABASE_URL_MAIN'),  # Fetch the connection string from the environment
-#         conn_max_age=600,               # Keep database connections open for 10 minutes
-#         ssl_require=True                # Enforce SSL for secure connections
-#     ),
-# }
-
-
+# Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -110,7 +110,6 @@ DATABASES = {
 
 }
 
-# DATABASE_ROUTERS = ['user.router.AuthRouter', 'abrmservices.router.ListingRouter', 'payments.router.PaymentsRouter']
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -166,3 +165,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
 # Custom user model
 AUTH_USER_MODEL = 'user.UserAccount'
 
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',  # keep this for default Django auth
+)
