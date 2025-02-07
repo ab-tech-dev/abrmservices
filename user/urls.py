@@ -12,6 +12,7 @@ urlpatterns = [
     path('initiate_chat/<str:email>/', views.initiate_chat, name='initiate_chat'),
     path('notifications/', views.notifications_page, name='notifications_page'),
     path('notifications/mark-as-read/<int:notification_id>/', views.mark_as_read, name='mark_as_read'),
+    path('notifications/mark-all-as-read/', views.mark_all_as_read, name='mark_as_read'),
     path('notifications/delete/<int:notification_id>/', views.delete_notification, name='delete_notification'),
         # Traditional login, register, logout
     path('login/', views.user_login, name='user_login'),

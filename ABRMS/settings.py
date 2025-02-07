@@ -48,19 +48,21 @@ SCOPES = [
 ]
 
 # Optional: Define login URL
-LOGIN_URL = 'login'
+LOGIN_URL = '/housing/#login'
 LOGIN_REDIRECT_URL = 'housing'
 LOGOUT_REDIRECT_URL = 'housing'
 
 # Google OAuth2 credentials
 GOOGLE_OAUTH2_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
 GOOGLE_OAUTH2_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
-GOOGLE_OAUTH2_REDIRECT_URI = 'https://aa31-197-211-58-3.ngrok-free.app/auth/google/callback/'
+GOOGLE_OAUTH2_REDIRECT_URI = 'https://rested-cheerful-skink.ngrok-free.app/auth/google/callback/'
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://aa31-197-211-58-3.ngrok-free.app",
+    "https://rested-cheerful-skink.ngrok-free.app",
 ]
 
+
+SITE_DOMAIN = 'rested-cheerful-skink.ngrok-free.app'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'  # or 'bootstrap5', depending on your preference
 
@@ -143,14 +145,14 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Email configuration
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT =587
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'default_email_user')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'default_email_password')
-EMAIL_USE_TLS=True
-EMAIL_USE_SSL=False
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587  # Recommended port for TLS
+EMAIL_USE_TLS = True  # Use TLS
+EMAIL_USE_SSL = False  # SSL should be False when using TLS
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Remove default email
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Remove default password
 
 # Media files
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

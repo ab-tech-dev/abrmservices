@@ -45,13 +45,7 @@ from .models import Listing
 from django import forms
 
 class SearchForm(forms.Form):
-    SEARCH_CHOICES = [
-        ('house', 'House'),
-        ('apartment', 'Apartment'),
-        ('offices', 'Offices'),
-        ('townhome', 'Townhome'),
-        ('estate_house', 'A house in an estate'),  # Added option
-    ]
+
     
     CATEGORY_CHOICESA = [
         ('50000', '50000'),
@@ -74,15 +68,6 @@ class SearchForm(forms.Form):
         ('10000000000', '10000000000'),
         ('100000000000', '100000000000'),
     ]
-    search = forms.CharField(
-        label='Search: *',
-        max_length=100,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Add your decription',
-            'required': 'required',
-            'class': 'input-field'
-        })
-    )
     
     location = forms.CharField(
         max_length=255,
@@ -94,15 +79,10 @@ class SearchForm(forms.Form):
         })
     )
 
-    category = forms.ChoiceField(
-        label='Select Categories',
-        choices=SEARCH_CHOICES,
-        widget=forms.Select(attrs={'class': 'dropdown-list'})
-    )
 
     min_price = forms.ChoiceField(
         label='Min Price:',
-        choices= CATEGORY_CHOICESA,
+        choices=CATEGORY_CHOICESA,
         widget=forms.Select(attrs={'class': 'dropdown-list'})
     )
 
@@ -111,6 +91,11 @@ class SearchForm(forms.Form):
         choices=CATEGORY_CHOICESB,
         widget=forms.Select(attrs={'class': 'dropdown-list'})
     )
+
+    # Additional fields can be added as needed
+    sale_type = forms.ChoiceField(choices=[('For Sale', 'For Sale'), ('For Rent', 'For Rent')], required=False)
+
+
 
 from django import forms
 from crispy_forms.helper import FormHelper
@@ -294,112 +279,98 @@ def housing(request):
 
     # Forms
     form = SearchForm(request.POST or None)
-    cform = ListingForm(request.POST, request.FILES)
+    cform = ListingForm(request.POST or None, request.FILES or None)
     register_form = RegisterForm(request.POST or None)
     login_form = LoginForm(request.POST or None)
 
+    # Process Listing Form (cform)
+    if cform.is_valid() and 'create_listing' in request.POST:
+        cform.instance.realtor = User(id=request.user.id)
 
-    if request.method == 'POST':
-        if cform.is_valid():
-            cform.instance.realtor =User(id=request.user.id)  # or another relevant user object
+        # Handle the file uploads (if needed)
+        cform.main_photo = request.FILES.get('main_photo')
+        cform.video = request.FILES.get('video')
 
-            # Handle the file uploads (if needed)
-            cform.main_photo = request.FILES.get('main_photo')
-            cform.video = request.FILES.get('video')
+        listing = cform.save(commit=False)
+        listing.realtor = request.user
+        listing.save()
 
-            listing = cform.save(commit=False)  # Save the form instance without committing
-            listing.realtor = request.user  # Assign realtor
-            listing.save()  # Save to generate the instance ID
+        # Handle the file uploads for ManyToMany fields
+        bathroom_photos = request.FILES.getlist('bathroom_photos')
+        for photo in bathroom_photos:
+            photo_instance = Photo.objects.create(image=photo)
+            listing.bathroom_photos.add(photo_instance)
 
-            # Handle the file uploads for ManyToMany fields
-            bathroom_photos = request.FILES.getlist('bathroom_photos')
-            for photo in bathroom_photos:
-                photo_instance = Photo.objects.create(image=photo)
-                listing.bathroom_photos.add(photo_instance)  # Associate photo with listing
+        toilet_photos = request.FILES.getlist('toilet_photos')
+        for photo in toilet_photos:
+            photo_instance = Photo.objects.create(image=photo)
+            listing.toilet_photos.add(photo_instance)
 
-            toilet_photos = request.FILES.getlist('toilet_photos')
-            for photo in toilet_photos:
-                photo_instance = Photo.objects.create(image=photo)
-                listing.toilet_photos.add(photo_instance)
+        additional_photos = request.FILES.getlist('additional_photos')
+        for photo in additional_photos:
+            photo_instance = Photo.objects.create(image=photo)
+            listing.additional_photos.add(photo_instance)
 
-            additional_photos = request.FILES.getlist('additional_photos')
-            for photo in additional_photos:
-                photo_instance = Photo.objects.create(image=photo)
-                listing.additional_photos.add(photo_instance)
+        listing.save()
 
-            listing.save()
-            
-            messages.success(request, "Listing created successfully!")
-            Notification.objects.create(
+        messages.success(request, "Listing created successfully!")
+        Notification.objects.create(
             user=user,
             message=f"Your listing '{listing.title}' has been successfully created."
-            )
-            # cform.instance.realtor = request.user
+        )
+        return redirect('housing')
+    
 
-            # cform.main_photo = request.FILES.get('main_photo')
-            # cform.video = request.FILES.get('video')
-            # # Handle room_photos
-            # additional_photos = request.FILES.getlist('additional_photos')
-            # for photo in additional_photos:
-            #     photo_instance = Photo.objects.create(image=photo)
-            #     cform.additional_photos.add(photo_instance)
-
-            # # Handle bathroom_photos
-            # bathroom_photos = request.FILES.getlist('bathroom_photos')
-            # for photo in bathroom_photos:
-            #     photo_instance = Photo.objects.create(image=photo)
-            #     cform.bathroom_photos.add(photo_instance)
-
-            # # Handle other_photos
-            # toilet_photos = request.FILES.getlist('toilet_photos')
-            # for photo in toilet_photos:
-            #     photo_instance = Photo.objects.create(image=photo)
-            #     cform.toilet_photos.add(photo_instance)
-
-            # cform.save()
-            # messages.success(request, "Listing created successfully!")
-            return redirect('housing')
-        else:
-            cform = ListingForm()
-            messages.error(request, "Please correct the errors in the form.")
-
-
-
-    # Search Form Process
-    if form.is_valid():
-        location = form.cleaned_data['location']
-        home_type = form.cleaned_data.get('category')
-        search_description = form.cleaned_data.get('search')
+    # Process Search Form (form)
+    # Process Search Form (form)
+    if form.is_valid() and 'search' in request.POST:
+        location = form.cleaned_data.get('location')
         min_price = form.cleaned_data.get('min_price')
         max_price = form.cleaned_data.get('max_price')
 
-        query = Q()
+        query = Q()  # Start with an empty query object
+
+        # Apply location filter if it's provided
         if location:
-            query &= Q(location__icontains=location)
-        if home_type:
-            query &= Q(home_type=home_type)
-        if search_description:
-            query |= Q(description__icontains=search_description)
-        if min_price:
-            query &= Q(price__gte=int(min_price))
-        if max_price:
-            query &= Q(price__lte=int(max_price))
+            query &= Q(location__icontains=location)  # Use '&' to combine conditions
 
-        # Additional filters
-        sale_type = request.POST.get('sale_type')
-        bedrooms = request.POST.get('bedrooms')
-
-        if sale_type:
-            query &= Q(sale_type=sale_type)
-        if bedrooms:
+        # Apply min_price filter if it's provided and valid
+        if min_price not in [None, '']:  # Check for None or empty string
             try:
-                query &= Q(bedrooms=int(bedrooms))
-            except ValueError:
-                pass
+                min_price = float(min_price)
+                query &= Q(price__gte=min_price)  # Use '&' to combine conditions
+            except (ValueError, TypeError):
+                # Handle invalid min_price (e.g., non-numeric input)
+                no_results_message = "Invalid minimum price."
 
-        listings = Listing.objects.filter(query).filter(is_published=True)
-        if not listings.exists():
-            no_results_message = "No results found."
+        # Apply max_price filter if it's provided and valid
+        if max_price not in [None, '']:  # Check for None or empty string
+            try:
+                max_price = float(max_price)
+                query &= Q(price__lte=max_price)  # Use '&' to combine conditions
+            except (ValueError, TypeError):
+                # Handle invalid max_price (e.g., non-numeric input)
+                no_results_message = "Invalid maximum price."
+
+        # Ensure min_price is not greater than max_price
+        if min_price and max_price and min_price > max_price:
+            no_results_message = "Minimum price cannot be greater than maximum price."
+
+        # Apply sale_type filter if it's provided
+        sale_type = request.POST.get('sale_type')  # Directly from POST as it might not be in cleaned_data
+        if sale_type:
+            query &= Q(sale_type=sale_type)  # Apply sale_type condition
+
+        # Execute the query only if no errors were encountered
+        if not no_results_message:
+            listings = Listing.objects.filter(query)
+
+            # Check if any results were found
+            if not listings.exists():
+                no_results_message = "No results found."
+                form = SearchForm()  # It's better to instantiate the form empty for re-rendering in the template
+
+
 
     # Pass data to template
     return render(request, 'index.html', {
@@ -415,6 +386,7 @@ def housing(request):
         'unread_notifications_count': unread_notifications_count,
         'user': user,
     })
+
 
 def main(request):
     return render(request, 'main.html')

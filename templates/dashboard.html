@@ -210,22 +210,12 @@
                         {% csrf_token %}
                         <input type="hidden" name="sale_type" id="sale_type" value="">
                     
-                        <div class="input-wrapper">
-                            {{ form.search.label_tag }}
-                            {{ form.search }}
-                            <ion-icon name="search-outline"></ion-icon>
-                        </div>
-                    
                         <div class="input-wrapper stop">
                             {{ form.location.label_tag }}
                             {{ form.location }}
                         </div>
                     
-                        <div class="input-wrapper">
-                            {{ form.category.label_tag }}
-                            {{ form.category }}
-                        </div>
-                    
+
                         <div class="input-wrapper">
                             {{ form.min_price.label_tag }}
                             {{ form.min_price }}

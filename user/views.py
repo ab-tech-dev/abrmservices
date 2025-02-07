@@ -162,6 +162,7 @@ def google_auth_callback(request):
                 is_active=True  # Mark as active since Google verified email
             )
             user.set_unusable_password()  # No password required for Google login
+            user.is_active = True
             user.save()
             login(request, user)
             messages.success(request, "Account created successfully!")
@@ -186,7 +187,7 @@ def google_auth_callback(request):
                 messages.error(request, "No account found. Please sign up first.")
                 return redirect('housing')
             # ✅ Log Login Details with IP Geolocation
-
+            
             user.last_login_ip = ip_address
             user.last_login_agent = request.META.get('HTTP_USER_AGENT', '')
             geoip_db_path = os.path.join(settings.BASE_DIR, 'static', 'GeoLite2-City.mmdb')
@@ -255,9 +256,8 @@ def register(request):
         )
 
         user.is_active = False  # Prevent login until email is verified
-        user.save()
         send_verification_email(user,request)
-
+        user.save()
         messages.success(request, 'Account created! Please verify your email before logging in.')
         return redirect('housing')
 
@@ -332,23 +332,27 @@ def user_login(request):
     return redirect('housing')
 
 def send_verification_email(user, request):
-    """Send an email verification link to the user."""
-    
-    domain = request.get_host()  # Dynamically fetch domain
-    protocol = "https" if request.is_secure() else "http"
+    try:
+        """Send an email verification link to the user."""
+        
+        domain = request.get_host()  # Dynamically fetch domain
+        protocol = "https" if request.is_secure() else "http"
 
-    token = default_token_generator.make_token(user)
-    uid = urlsafe_base64_encode(force_bytes(user.pk))
-    verification_link = f"{protocol}://{domain}/verify-email/{uid}/{token}/"
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        verification_link = f"{protocol}://{domain}/verify-email/{uid}/{token}/"
 
-    send_mail(
-        'Verify Your Email',
-        f'Click the link to verify your email: {verification_link}',
-        'abrelocationservices@gmail.com',
-        [user.email],
-        fail_silently=False,
-    )
-
+        send_mail(
+            'Verify Your Email',
+            f'Click the link to verify your email: {verification_link}',
+            'abrelocationservices@gmail.com',
+            [user.email],
+            fail_silently=False,
+        )
+    except Exception as e :
+        logger.error(f"Error sending verification email: {str(e)}")
+        messages.error(request, 'User not created.')
+        redirect('housing')
 
 
 
@@ -397,7 +401,6 @@ from abrmservices.views import ListingForm, SearchForm  # Make sure to import yo
 from django.contrib import messages
 from django.contrib.messages import get_messages
  
-
 @login_required_with_message
 def mydashboard(request, id=None):
     messages_list = get_messages(request)  # Retrieve messages for the request
@@ -407,11 +410,12 @@ def mydashboard(request, id=None):
     listings = Listing.objects.none()  # Default to no listings
     slistings = Listing.objects.none()
     no_results_message = ''
+    form = SearchForm()  # Initialize form to avoid UnboundLocalError
 
     # Edit existing listing or create a new one
     if id:
-        listing = get_object_or_404(Listing, id=user.id, realtor=user)
-        cform = ListingForm(request.POST, request.FILES or None, instance=listing)
+        listing = get_object_or_404(Listing, id=id, realtor=user)
+        cform = ListingForm(request.POST or None, request.FILES or None, instance=listing)
 
         if request.method == 'POST' and cform.is_valid():
             cform.save()
@@ -436,7 +440,7 @@ def mydashboard(request, id=None):
         listings = Listing.objects.filter(realtor=user)
 
         # Handle search form submission
-        form = SearchForm(request.POST or None)
+        form = SearchForm(request.POST or None)  # Reinitialize form if user is realtor
         if form.is_valid():
             location = form.cleaned_data.get('location')
             home_type = form.cleaned_data.get('category')
@@ -482,6 +486,7 @@ def mydashboard(request, id=None):
         'no_results_message': no_results_message,
         'id': id,
     })
+
 
 @login_required_with_message
 def delete_listing(request, id):
@@ -612,11 +617,11 @@ def send_message(request, chat_id):
             timestamp=now()
         )
 
-        # Notify the recipient of the new message
-        Notification.objects.create(
-            user=chat.user1 if chat.user2 == request.user else chat.user2,
-            message=f"You have a new message from {request.user.name}."
-        )
+        # # Notify the recipient of the new message
+        # Notification.objects.create(
+        #     user=chat.user1 if chat.user2 == request.user else chat.user2,
+        #     message=f"You have a new message from {request.user.name}."
+        # )
 
 
         return JsonResponse({
@@ -702,8 +707,21 @@ from .models import ChatMessage, Notification
 
 logger = logging.getLogger(__name__)
 
+from django.core.mail import EmailMessage
+from django.utils.timezone import now
+from django.urls import reverse
+from datetime import timedelta
+import logging
+
+logger = logging.getLogger(__name__)
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.conf import settings
+from .models import ChatMessage
+
 @receiver(post_save, sender=ChatMessage)
-def send_email_notification(sender, instance, created, **kwargs):
+def send_email_notification(instance, created, **kwargs):
     """
     Sends an email notification when a new ChatMessage is created,
     provided the recipient has been inactive for the last 5 minutes.
@@ -715,44 +733,46 @@ def send_email_notification(sender, instance, created, **kwargs):
             recipient = chat.user2 if instance.sender == chat.user1 else chat.user1
             offline_threshold = now() - timedelta(minutes=1)
 
-            # Check if the recipient is offline
-            if not recipient.last_active or recipient.last_active < offline_threshold:
-                # Generate a link to view the chat
-                chat_url = reverse('chat_detail', args=[chat.id])  # Replace 'chat_detail' with your chat view name
+            # Generate a link to view the chat
+            chat_url = reverse('chat_detail', args=[chat.id])  # Ensure this view exists
 
-                subject = f"New Message from {instance.sender.name}"
-                body = f"""
-                Hi {recipient.name},
+            # Fetch domain from settings or use a default
+            domain = getattr(settings, 'SITE_DOMAIN', 'rested-cheerful-skink.ngrok-free.app')
+            protocol = "https"  # Assuming HTTPS is used in production
 
-                You have a new message from {instance.sender.name}:
+            link = f"{protocol}://{domain}{chat_url}"
+            subject = f"New Message from {instance.sender.name}"
+            body = f"""
+            Hi {recipient.name},
 
-                "{instance.content}"
+            You have a new message from {instance.sender.name}:
 
-                Click the link below to view and respond:
-                {chat_url}
+            "{instance.content}"
 
-                Best Regards,
-                Your Team
-                """
+            Click the link below to view and respond:
+            {link}
 
-                # Prepare and send the email
-                email = EmailMessage(
-                    subject=subject.strip(),
-                    body=body.strip(),
-                    from_email='abrelocationsevices@gmail.com',  # Correct sender email
-                    to=[recipient.email],
-                    reply_to=['abrelocationsevices@gmail.com'],  # Correct reply-to email
-                )
-                email.send(fail_silently=False)
-                logger.info("Email sent successfully to %s", recipient.email)
-            else:
-                logger.debug("Recipient %s is active; email not sent.", recipient.email)
+            Best Regards,
+            Your Team
+            """
+
+            # Prepare and send the email
+            email = EmailMessage(
+                subject=subject.strip(),
+                body=body.strip(),
+                from_email='abrelocationsevices@gmail.com',  # Correct sender email
+                to=[recipient.email],
+                reply_to=['abrelocationsevices@gmail.com'],  # Correct reply-to email
+            )
+            email.send(fail_silently=False)
+            logger.info("Email sent successfully to %s", recipient.email)
         except Exception as e:
             logger.error("Failed to send email notification: %s", str(e), exc_info=True)
-            raise e
+            redirect('housing')
+
 
 @receiver(post_save, sender=Notification)
-def send_email_for_notification(sender, instance, created, **kwargs):
+def send_email_for_notification(instance, created, **kwargs):
     """
     Sends an email notification when a new Notification is created,
     provided the recipient has been inactive for the last 5 minutes.
@@ -761,12 +781,17 @@ def send_email_for_notification(sender, instance, created, **kwargs):
         try:
             logger.debug("Creating email notification for notification ID: %s", instance.id)
             recipient = instance.user
-            offline_threshold = now() - timedelta(minutes=1)
+            offline_threshold = now() - timedelta(minutes=0)
 
             # Check if the recipient is offline
             if not recipient.last_active or recipient.last_active < offline_threshold:
                 # Generate a link to view the notification
                 notification_url = reverse('notifications_page')  # Replace with your notification view name
+                # Fetch domain from settings or use a default
+                domain = getattr(settings, 'SITE_DOMAIN', 'rested-cheerful-skink.ngrok-free.app')
+                protocol = "https"  # Assuming HTTPS is used in production
+
+                link = f"{protocol}://{domain}/{notification_url}"
 
                 subject = "New Notification Alert"
                 body = f"""
@@ -777,7 +802,7 @@ def send_email_for_notification(sender, instance, created, **kwargs):
                 "{instance.message}"
 
                 Click the link below to view the notification:
-                {notification_url}
+                {link}
 
                 Best Regards,
                 Your Team
@@ -797,4 +822,4 @@ def send_email_for_notification(sender, instance, created, **kwargs):
                 logger.debug("Recipient %s is active; notification email not sent.", recipient.email)
         except Exception as e:
             logger.error("Failed to send notification email: %s", str(e), exc_info=True)
-            raise e
+            redirect('housing')

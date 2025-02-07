@@ -4,13 +4,21 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 import hashlib
 from abrmservices.models import Listing
-
 User = get_user_model()
+from decimal import Decimal
+
 
 class Wallet(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wallet")
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    locked_balance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    
+    @property
+    def available_balance(self):
+        # Calculate available balance on the fly
+        return self.balance - self.locked_balance
+
 
     def __str__(self):
         return f"Wallet for {self.user.name} - Balance: {self.balance}"

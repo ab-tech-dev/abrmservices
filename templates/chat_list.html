@@ -196,6 +196,14 @@
             background-color: #555555; /* Darker scrollbar */
             border-radius: 10px;
         }
+
+        .no-chat {
+            align-self: center;
+            text-align: center;
+            font-size: 1.2rem;
+            color: #888;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -205,6 +213,7 @@
         </header>
 
         <div class="chat-list-container">
+            {% if chat_list %}
             <ul class="chat-list">
                 {% for chat in chat_list %}
                     <a href="{% url 'chat_detail' chat_id=chat.chat_id %}" style="text-decoration: none;">
@@ -228,6 +237,9 @@
                     </a>
                 {% endfor %}
             </ul>
+            {% else %}
+            <p class="no-chat">No Messages yet.</p>
+            {% endif %}
         </div>
     </div>
     <div class="bg"></div> 

@@ -1,0 +1,1013 @@
+
+<!DOCTYPE html>
+ <html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Realestate - Choose your dream home</title>
+  <!--======== custom css link =========-->
+  <link rel="stylesheet" href="/static/css/beau.css">
+  <!--========= google font link ========-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAOVYRIgupAurZup5y1PRh8Ismb1A3lLao&libraries=places&callback=initMap"></script>
+  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="/static/css/logo-modified.png">
+  <script src="/static/js/main.js" defer></script>
+
+</head>
+<body>
+    
+   <header class="header stop" data-header>
+        <div class="container">
+            <a href="" class="logo">
+                <ion-icon name="home-outline"></ion-icon> Realestate
+            </a>
+
+            <nav class="navbar container" data-navbar>
+                <ul class="navbar-list">
+                    <li>
+                        <a href="/" class="navbar-link" data-nav-link>Home</a>
+                    </li>
+                    <li>
+                        <a href="#" class="navbar-link" data-nav-link>Services</a>
+                    </li>
+                    <li>
+                        <a href="/contact" class="navbar-link" data-nav-link>Contact</a>
+                    </li>
+                    <li>
+                        <a href="/about" class="navbar-link" data-nav-link>About Us</a>
+                    </li>
+
+                    <li>
+                        
+                            <form method="POST" action="/logout/" class="navbar-link" data-nav-link>
+                                <input type="hidden" name="csrfmiddlewaretoken" value="yGbVRyyDnM03OxtLfDcNFsCXyDghGEYWWRQWxiswc3ZN72wOcS1ZLHy3nR97VETE">
+                                <button type="submit" class="" style="color: #007BFF;">Logout</button>
+                            </form>
+
+                        
+                    </li>
+                    
+                        <li style=" padding-top: 5px; font-size: 30px;" class="navbar-link" data-nav-link>
+                            <a href="/chats/" data-nav-link style="position: relative; display: inline-block;">
+                                <ion-icon name="chatbox-ellipses-outline" data-nav-link></ion-icon>
+                                
+                            </a>
+                        </li>
+                        <li style="padding-top: 5px; font-size: 30px;" class="navbar-link" data-nav-link>
+                            <a href="/notifications/" data-nav-link style="position: relative; display: inline-block;">
+                                <ion-icon name="notifications-outline" data-nav-link></ion-icon>
+                                
+                            </a>
+                        </li>
+                        
+                    
+                </ul>
+            </nav>
+            
+                <a href="/dashboard/" class="btn btn-secondary">View Dashboard</a>
+            
+
+            <button class="nav-toggle-btn" aria-label="Toggle menu" data-nav-toggler style="position: relative;">
+                <div style="position: relative;">
+                    
+                    <ion-icon name="menu-outline" aria-hidden="true" class="menu-icon"></ion-icon>
+                    <ion-icon name="close-outline" aria-hidden="true" class="close-icon"></ion-icon>
+                </div>
+            </button>
+        </div>
+   </header>
+   <!--======== main =========-->
+   <main>
+        <article class="article">
+            <section class="section hero" aria-label="hero">
+                <div class="container">
+                    <div class="hero-bg">
+                        <div class="hero-content">
+                            <h1 class="h1 hero-title">
+                                We will help you find your <span class="span">Dream</span> home
+                            </h1>
+
+                            <p class="hero-text">
+                                Buy your dream home today without any agent or commissions
+                            </p>
+                        </div>
+                    </div>
+                    <div id="lgf"></div>
+                </div>
+                <div class="hero-form-wrapper stop" id="search-result">
+                    <div class="form-tab" id="login">
+                        <button type="button" class="tab-btn" id="buy-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Buy</button>
+                        <a href="#login"><button type="button" class="tab-btn" id="sell-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Sell</button></a>
+                        <button type="button" class="tab-btn" id="rent-btn" data-tab-btn onmouseover=" this.style.textShadow='2px 2px 8px #007BFF'; this.style.fontSize='18px';" onmouseout=" this.style.textShadow='none'; this.style.fontSize='16px';">Rent</button>
+                    </div>
+                    <!-- Search Form -->
+                    <form method="post" class="hero-form stop" id="search-form" action="/housing/#search-result" style="display: none; position: absolute;" enctype="multipart/form-data">
+                        <style>
+                            .hero-form {
+                                width: 100%;
+                                max-width: 800px; /* Keeps form centered on larger screens */
+                                padding: 1.5rem;
+                                background-color: #fff;
+                                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Adds shadow to give depth */
+                                border-radius: 8px;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 1.5rem;
+                            }
+
+                            .input-wrapper {
+                                display: flex;
+                                flex-direction: column; /* Stacks the label and input vertically */
+                                width: 100%;
+                                gap: 0.5rem;
+                            }
+
+                            .input-wrapper input, .input-wrapper select {
+                                width: 100%; /* Makes inputs take full width */
+                                padding: 0.75rem;
+                                border: 1px solid #ced4da;
+                                border-radius: 4px;
+                                box-sizing: border-box; /* Ensures padding doesn't affect the total width */
+                            }
+
+                            /* Responsive styling for smaller screens */
+                            @media (max-width: 768px) {
+                                .hero-form {
+                                    max-width: 90%; /* Ensures the form doesn't overflow on smaller screens */
+                                    padding: 1.5rem;
+                                }
+
+                                .input-wrapper, .btn-primary {
+                                    width: 100%; /* Ensures full-width inputs and buttons */
+                                }
+
+                                /* Adds some space between elements on smaller screens */
+                                .input-wrapper input, .input-wrapper select, .btn-primary {
+                                    margin-bottom: 1rem;
+                                }
+                            }
+
+                            /* Additional adjustments for form labels */
+                            .input-wrapper label {
+                                font-weight: bold;
+                            }
+                        </style>
+
+                        <input type="hidden" name="csrfmiddlewaretoken" value="yGbVRyyDnM03OxtLfDcNFsCXyDghGEYWWRQWxiswc3ZN72wOcS1ZLHy3nR97VETE">
+                        <input type="hidden" name="sale_type" id="sale_type" value="">
+
+                        <!-- Location input -->
+                        <div class="input-wrapper stop">
+                            <label for="id_location">Location:</label>
+                            <input type="text" name="location" id="id_location" placeholder="Enter a location" class="input-field stop" maxlength="255" required>
+                        </div>
+
+                        <!-- Min Price dropdown -->
+                        <div class="input-wrapper">
+                            <label for="id_min_price">Min Price:</label>
+                            <select name="min_price" class="dropdown-list" id="id_min_price">
+                                <option value="50000">50000</option>
+
+                                <option value="100000">100000</option>
+
+                                <option value="200000">200000</option>
+
+                                <option value="300000">300000</option>
+
+                                <option value="400000">400000</option>
+
+                                <option value="500000">500000</option>
+
+                                <option value="600000">600000</option>
+
+                            </select>
+                        </div>
+
+                        <!-- Max Price dropdown -->
+                        <div class="input-wrapper">
+                            <label for="id_max_price">Max Price:</label>
+                            <select name="max_price" class="dropdown-list" id="id_max_price">
+                                <option value="500000">500000</option>
+
+                                <option value="1000000">1000000</option>
+
+                                <option value="5000000">5000000</option>
+
+                                <option value="10000000">10000000</option>
+
+                                <option value="50000000">50000000</option>
+
+                                <option value="100000000">100000000</option>
+
+                                <option value="1000000000">1000000000</option>
+
+                                <option value="10000000000">10000000000</option>
+
+                                <option value="100000000000">100000000000</option>
+
+                            </select>
+                        </div>
+
+                        <!-- Search button -->
+                        <button type="submit" name="search" class="btn btn-primary">Search</button>
+                    </form>
+
+                    <div id="formsr" class="stop" style="display: none;">    
+                        <div id="realtor-form" class="property-card" style="background: white; z-index: 2; position: absolute; margin: auto; padding: 2rem; justify-content: space-between; gap: 5rem;">
+                            <style>
+                                #realtor-form {
+                                    width: fit-content; /* Full width */
+                                    max-width: 500px; /* Prevents it from being too wide on large screens */
+                                    min-width: 300px; /* Ensures it doesn't get too narrow */
+                                    margin: 2rem auto; /* Center the form and add space above and below */
+                                    padding: 2rem;
+                                    display: flex;
+                                    flex-direction: column;
+                                    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow for aesthetics *//* Rounded corners */
+                                }
+                            
+                                /* Style for buttons */
+                                .btn {
+                                    width: 100%; /* Make the buttons stretch across the form */
+                                    padding: 1rem;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                }
+                            
+                                /* Style for primary and secondary buttons */
+                                .btn-primary {
+                                    background-color: #007BFF;
+                                    color: white;
+                                }
+
+                                .strt{
+                                    display: flex;
+                                }
+                            
+                                .btn-secondary {
+                                    background-color: #6c757d;
+                                    color: white;
+                                }
+                            
+                                /* Style for error/success messages */
+                                /* .messages {
+                                    list-style: none;
+                                    padding: 0;
+                                    margin: 0;
+                                }
+                            
+                                .messages li {
+                                    margin: 1rem 0;
+                                } */
+                            
+                                /* Responsive styles */
+                                @media (max-width: 768px) {
+                                    #realtor-form {
+                                        max-width: 90%; /* Make the form width adapt to smaller screens */
+                                    }
+                                    .strt {
+                                        display: block;
+                                    }
+                                }
+
+                                .js .input-file-container {
+                                    position: relative;
+                                    width: inherit;
+                                }
+
+                                .js .input-file-trigger {
+                                    display: block;
+                                    padding: 8px 20px;
+                                    background: #007bff;
+                                    color: #fff;
+                                    font-size: 14px;
+                                    transition: all .4s;
+                                    cursor: pointer;
+                                }
+
+                                .js .input-file {
+                                    position: absolute;
+                                    top: 0;
+                                    left: 0;
+                                    width: inherit;
+                                    padding: 14px 0;
+                                    opacity: 0;
+                                    cursor: pointer;
+                                }
+
+                                /* some styles for interactions */
+                                .js .input-file:hover + .input-file-trigger,
+                                .js .input-file:focus + .input-file-trigger,
+                                .js .input-file-trigger:hover,
+                                .js .input-file-trigger:focus {
+                                    background: #34495E;
+                                    color: #007bff;
+                                }
+
+                                /* our visual feedback P */
+                                .file-return {
+                                    margin: 0;
+                                }
+
+                                .file-return:not(:empty) {
+                                    margin: .2em 0;
+                                    padding: 0 .2em;
+                                }
+
+                                .js .file-return {
+                                    font-style: italic;
+                                    font-size: .8em;
+                                    font-weight: normal;
+                                }
+
+                                /* only if the paragraph is not empty, we complete the visual feedback with this text */
+                                .js .file-return:not(:empty):before {
+                                    content: "file: ";
+                                    font-style: normal;
+                                    font-weight: normal;
+                                }
+                            </style>
+                            <div class="form-container">
+                                <h2>Create Listing</h2>
+                                <br>
+                                <br>
+                                <form method="POST" enctype="multipart/form-data">
+                                    <input type="hidden" name="csrfmiddlewaretoken" value="yGbVRyyDnM03OxtLfDcNFsCXyDghGEYWWRQWxiswc3ZN72wOcS1ZLHy3nR97VETE">
+                                
+                                    <!-- Title and Location Fields -->
+                                    <div class="row-container">
+                                        <label for="id_title">Title:</label>
+                                        <input type="text" name="title" placeholder="Enter property description" class="form-control" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;" maxlength="255" required id="id_title">
+                                    </div>
+                                    <div class="row-container">
+                                        <label for="id_location">Location:</label>
+                                        <input type="text" name="location" placeholder="Enter Location" class="form-control stop" id="id_location" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;" maxlength="255" required>
+                                    </div>
+                                
+                                    <!-- Bedrooms and Bathrooms Fields -->
+                                    <div class="strt" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; justify-content: space-between;">
+                                        <div class="row-container" style="width: 100%;">
+                                            <label for="id_bedrooms">No of Bedrooms:</label>
+                                            <input type="number" name="bedrooms" placeholder="Number of Bedrooms" class="form-control" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;" required id="id_bedrooms">
+                                        </div>
+                                        <div class="row-container" style="width: 100%;">
+                                            <label for="id_bathrooms">No of Restrooms:</label>
+                                            <input type="number" name="bathrooms" placeholder="Number of Bathrooms" class="form-control" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;" required id="id_bathrooms">
+                                        </div>
+                                    </div>
+                                
+                                    <!-- Sale Type and Home Type Fields -->
+                                    <div class="strt" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; justify-content: space-between;">
+                                        <div class="row-container" style="width: 100%;">
+                                            <label for="id_sale_type">For Sale or For Rent:</label>
+                                            <select name="sale_type" class="form-control" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;" id="id_sale_type">
+                                                <option value="For Sale">For Sale</option>
+
+                                                <option value="For Rent">For Rent</option>
+
+                                            </select>
+                                        </div>
+                                
+                                        <div class="row-container" style="width: 100%;">
+                                            <label for="id_home_type">Home Type:</label>
+                                            <select name="home_type" class="form-control" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;" id="id_home_type">
+                                                <option value="house">House</option>
+
+                                                <option value="apartment">Apartment</option>
+
+                                                <option value="condo">Condo</option>
+
+                                                <option value="townhome">Townhome</option>
+
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="strt" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; justify-content: space-between;">
+
+                                        <!-- Main Photo Field (Styled) -->
+                                        <div class="row-container">
+                                            <div class="input-file-container">
+                                                <input class="input-file" type="file" name="main_photo" accept="image/*" id="id_main_photo" required>
+                                                <label for="id_main_photo" class="input-file-trigger" tabindex="0">Select Property Main Photo...</label>
+                                            </div>
+                                            <p class="file-return"></p>
+                                        </div>
+                                    
+                                        <!-- Video File Field (Styled) -->
+                                        <div class="row-container">
+                                            <div class="input-file-container">
+                                                <input class="input-file" type="file" name="video" accept="video/*" id="id_video">
+                                                <label for="id_video" class="input-file-trigger" tabindex="0">Upload a short video...</label>
+                                            </div>
+                                            <p class="file-return"></p>
+                                        </div>
+                                    </div>
+                                    <!-- Additional Photos and Other Fields -->
+                                    <!-- (Rest of your form fields can remain the same, following the same structure) -->
+                                
+                                    <div class="strt" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; justify-content: space-between;">
+                                        <div class="row-container">
+                                            <div class="input-file-container">
+                                                <input class="input-file" type="file" name="additional_photos" accept="image/*" id="id_additional_photos" multiple>
+                                                <label for="id_additional_photos" class="input-file-trigger" tabindex="0">Select Additional Photos...</label>
+                                            </div>
+                                            <p class="file-return"></p>
+                                        </div>
+                                        <div class="row-container">
+                                            <div class="input-file-container">
+                                                <input class="input-file" type="file" name="bathroom_photos" accept="image/*" id="id_bathroom_photos" multiple>
+                                                <label for="id_bathroom_photos" class="input-file-trigger" tabindex="0">Select Restroom Photos...</label>
+                                            </div>
+                                            <p class="file-return"></p>
+                                        </div>
+                                    </div>
+                                
+                                    <!-- Price Field -->
+                                    <div class="row-container">
+                                        <label for="id_price">Price:</label>
+                                        <input type="number" name="price" placeholder="Enter Price" class="form-control" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;" step="0.01" required id="id_price">
+                                    </div>
+                                
+                                    <!-- Submit Button -->
+                                    <button type="submit" name="create_listing" class="btn btn-primary">Submit</button>
+                                    <script>
+                                        // Adds .js class to HTML
+                                        document.querySelector("html").classList.add('js');
+
+                                        // init our variables
+                                        var fileInputs = document.querySelectorAll(".input-file");
+                                        var theReturn = document.querySelectorAll(".file-return");
+
+                                        // Loop over each file input and add the event listeners
+                                        fileInputs.forEach(function(fileInput, index) {
+                                            var button = fileInput.nextElementSibling;  // the label element
+                                            var fileReturn = theReturn[index];          // the corresponding .file-return paragraph
+
+                                            // Trigger when Space bar or Enter is hit
+                                            button.addEventListener("keydown", function(event) {
+                                                if (event.keyCode == 13 || event.keyCode == 32) {
+                                                    fileInput.focus();
+                                                }
+                                            });
+
+                                            // Trigger when the label is clicked
+                                            button.addEventListener("click", function(event) {
+                                                fileInput.focus();
+                                                return false;
+                                            });
+
+                                            // Display a visual feedback without modifying the file path
+                                            fileInput.addEventListener("change", function(event) {
+                                                var filePath = this.value.split("\\").pop();  // Get only the file name from the full path
+                                                fileReturn.innerHTML =  filePath;
+                                            });
+                                        });
+
+                                    </script>
+                                </form>
+                            </div>
+                        </div>   
+                        
+                        <script>
+                            if (window.location.hash.startsWith('#login')) {
+                                // Check if the elements exist before applying styles
+                                const target = document.getElementById('lgf');
+                                const topPosition = target.offsetTop;
+                                window.scrollTo({ top: topPosition, behavior: 'smooth' });
+                                const loginForm = document.getElementById('login-form');
+                                if (loginForm) {
+                                    // Scroll to the login section smoothly
+                                    document.getElementById('lgf').scrollIntoView({ behavior: 'smooth' });
+                                    // Display the login form
+                                    loginForm.style.display = 'block';
+                                }
+
+                                // Set button colors and backgrounds if they exist
+                                const buyBtn = document.getElementById('buy-btn');
+                                const sellBtn = document.getElementById('sell-btn');
+                                const rentBtn = document.getElementById('rent-btn');
+
+                                if (buyBtn && sellBtn && rentBtn) {
+                                    buyBtn.style.color = 'black';
+                                    sellBtn.style.color = 'white';
+                                    rentBtn.style.color = 'black';
+                                    buyBtn.style.background = 'none';
+                                    sellBtn.style.background = '#007BFF';
+                                    rentBtn.style.background = 'none';
+                                }
+
+                                // Show and style the form with ID 'formsr'
+                                const formSr = document.getElementById('formsr');
+                                if (formSr) {
+                                    formSr.style.display = 'block';
+                                    formSr.style.zIndex = '2';
+                                    formSr.style.background = 'blue';  // Change to 'white' if preferred
+                                }
+
+                                // Optionally hide the search form
+                                const searchForm = document.getElementById('search-form');
+                                if (searchForm) {
+                                    searchForm.style.display = 'none';
+                                }
+                            }
+
+                            
+                            document.getElementById('buy-btn').addEventListener('click', function() {
+                                document.getElementById('sale_type').value = 'For Sale';
+                                document.getElementById('search-form').style.display = 'flex';
+                                document.getElementById('search-form').style.zIndex = 2;
+                                document.getElementById('formsr').style.display = 'none'; 
+                                document.getElementById('buy-btn').style.color = 'white';
+                                document.getElementById('sell-btn').style.color = 'black';
+                                document.getElementById('rent-btn').style.color = 'black';
+                                document.getElementById('buy-btn').style.background = '#007BFF';
+                                document.getElementById('sell-btn').style.background = 'none';
+                                document.getElementById('rent-btn').style.background = 'none';
+                            });
+                            // Target element selector
+
+                        
+                            document.getElementById('rent-btn').addEventListener('click', function() {
+                                document.getElementById('sale_type').value = 'For Rent';
+                                document.getElementById('search-form').style.display = 'flex';
+                                document.getElementById('search-form').style.zIndex = 2;
+                                document.getElementById('formsr').style.display = 'none'; 
+                                document.getElementById('buy-btn').style.color = 'black';
+                                document.getElementById('sell-btn').style.color = 'black';
+                                document.getElementById('rent-btn').style.color = 'white';
+                                document.getElementById('buy-btn').style.background = 'none';
+                                document.getElementById('sell-btn').style.background = 'none';
+                                document.getElementById('rent-btn').style.background = '#007BFF';
+                            });
+
+
+                            // Target element selector
+                            document.addEventListener("click", function (event) {
+                                const divs = document.querySelectorAll(".stop"); // Elements with class "stop"
+                                const pacContainer = document.querySelector(".pac-container"); // Google autocomplete dropdown
+                                const buyBtn = document.getElementById("buy-btn");
+                                const sellBtn = document.getElementById("sell-btn");
+                                const rentBtn = document.getElementById("rent-btn");
+                                const formsr = document.getElementById("formsr");
+                                const searchForm = document.getElementById("search-form");
+
+                                let clickInsideStopDiv = false;
+                                let clickInsidePacContainer = pacContainer && pacContainer.contains(event.target);
+
+                                // Check if the click is inside any .stop div
+                                divs.forEach((div) => {
+                                    if (div.contains(event.target)) {
+                                        clickInsideStopDiv = true;
+                                    }
+                                });
+
+                                // If clicked outside .stop and .pac-container, hide elements
+                                if (!clickInsideStopDiv && !clickInsidePacContainer) {
+                                    buyBtn.style.color = "black";
+                                    sellBtn.style.color = "black";
+                                    rentBtn.style.color = "black";
+                                    buyBtn.style.background = "none";
+                                    sellBtn.style.background = "none";
+                                    rentBtn.style.background = "none";
+                                    formsr.style.display = "none";
+                                    searchForm.style.display = "none";
+                                }
+                            });
+
+                            // ✅ Keep Google Autocomplete active after selection
+                            function handlePlaceSelection() {
+                                console.log("Google Autocomplete selection detected!");
+                                setTimeout(() => {
+                                    formsr.style.display = "block"; // Keep form open after selecting a place
+                                }, 200);
+                            }
+
+                            // ✅ Add event listener to detect typing in the location input
+                            const locationInput = document.getElementById("location-input"); // Replace with your input field ID
+                            if (locationInput) {
+                                locationInput.addEventListener("input", function () {
+                                    console.log("Typing detected in location input...");
+                                    formsr.style.display = "block"; // Keep form open while typing
+                                });
+                            }
+
+                            // ✅ Detect when Google Autocomplete dropdown appears dynamically
+                            const observer = new MutationObserver(() => {
+                                const pacContainer = document.querySelector(".pac-container");
+                                if (pacContainer) {
+                                    pacContainer.addEventListener("click", handlePlaceSelection);
+                                }
+                            });
+
+                            // Start observing changes in the body
+                            observer.observe(document.body, { childList: true, subtree: true });
+
+
+                        
+                            document.getElementById('sell-btn').addEventListener('click', function() {
+    
+                                document.getElementById('buy-btn').style.color = 'black';
+                                document.getElementById('sell-btn').style.color = 'white';
+                                document.getElementById('rent-btn').style.color = 'black';
+                                document.getElementById('buy-btn').style.background = 'none';
+                                document.getElementById('sell-btn').style.background = '#007BFF';
+                                document.getElementById('rent-btn').style.background = 'none';
+                                document.getElementById('formsr').style.display = 'block';
+
+
+                                document.getElementById('formsr').style.zIndex = 2;
+                                document.getElementById('formsr').style.background = 'blue';
+                                document.getElementById('search-form').style.display = 'none';  // Adjust this as needed
+                            
+                                document.getElementById('formsr').style.zIndex = 2;
+                                document.getElementById('formsr').style.background = 'white';
+                            });
+    
+                        </script>
+                    </div>
+                </div>
+            </section>
+            <section>
+                <h2 style="margin: 1.5% 5%; z-index: 2;"></h2>
+            
+                    <section class="section about" id="about" aria-level="about">
+                <div class="container">
+                    <div class="about-banner img-holder" style="--width: 600; --height: 700;">
+                        <img src="/static/images/abt-banner.jpg" width="600px" height="700px" loading="lazy" alt="" class="img-cover">
+
+                        <button class="play-btn" aria-label="play video">
+                            <ion-icon name="play" aria-hidden="true"></ion-icon>
+                        </button>
+                    </div>
+
+                    <div class="about-content">
+                        <h2 class="h2 section-title">Trusted. Affordable. Transparent</h2>
+                        <p class="section-text">Lorem ipsum dolor sit amet consectetur adipisicing elit. Deserunt commodi ex illo quisquam impedit, corrupti odio placeat dolores eius voluptas? Mollitia quas laborum dolores ipsam dolor. Quo provident at modi!</p>
+                        <a href="#" class="btn btn-primary">Learn More</a>
+                    </div>
+                </div>
+            </section>
+
+            <!--========== SECTION ==========-->
+            <section class="section service" id="service" aria-label="service">
+                <div class="container">
+                    <h2 class="section-title">How It Works</h2>
+                    <p class="section-text">A great platform to buy, sell and rent your properties without any agent or commisions</p>
+                    <ul class="service-list">
+                        <li>
+                            <div class="service-card">
+                                <div class="card-icon">
+                                    <ion-icon name="home-outline"></ion-icon>
+                                </div>
+                                <h3 class="h3 card-title">Evaluate Property</h3>
+                                <p class="card-text">
+                                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Fuga suscipit neque nemo voluptatibus! Quas quis delectus sunt incidunt numquam.
+                                </p>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="service-card">
+                                <div class="card-icon">
+                                    <ion-icon name="briefcase-outline"></ion-icon>
+                                </div>
+                                <h3 class="h3 card-title">Meeting With Agent</h3>
+                                <p class="card-text">
+                                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Fuga suscipit neque nemo voluptatibus! Quas quis delectus sunt incidunt numquam.
+                                </p>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="service-card">
+                                <div class="card-icon">
+                                    <ion-icon name="key-outline"></ion-icon>
+                                </div>
+                                <h3 class="h3 card-title">Close The Deal</h3>
+                                <p class="card-text">
+                                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Fuga suscipit neque nemo voluptatibus! Quas quis delectus sunt incidunt numquam.
+                                </p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <!--=========== PROPERTIES ===========-->
+            <section class="section property" id="property" aria-label="property">
+                <div class="container">
+                    <h2 class="h2 section-title">Featured Properties</h2>
+                    <p class="section-text">
+                        A great platform to buy, sell, and rent properties without any agent or commissions.
+                    </p>
+                    <ul class="property-list z">
+                        
+                        <li class="property-item">
+                            <div class="property-card">
+                                <!-- Property Image -->
+                                <figure class="card-banner img-holder" style="--width: 850; --height: 700;">
+                                    <img src="/media/main_photos/img1_3ouqmfY.jpg" width="850px" height="700" loading="lazy" alt="Duplex at Ekenwan Road" class="img-cover">
+                                </figure>
+                                
+                                <div class="card-actions">
+                                    <!-- Buy Now Button -->
+                                    <form method="POST" action="/buy-property/1/">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="yGbVRyyDnM03OxtLfDcNFsCXyDghGEYWWRQWxiswc3ZN72wOcS1ZLHy3nR97VETE">
+                                        
+                                    </form>
+                    
+                                    <!-- Add to Favourite Button -->
+                                    <button class="card-action-btn" aria-label="add to favourite">
+                                        <ion-icon name="heart-outline"></ion-icon>
+                                    </button>
+                                </div>
+                                
+                                <!-- Card Content -->
+                                <div class="card-content">
+                                    <!-- Property Title -->
+                                    <h3 class="h3">
+                                        <a href="#" class="card-title">Duplex at Ekenwan Road</a>
+                                    </h3>
+                                    
+                                    <!-- Property Details -->
+                                    <ul class="card-list">
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="bed-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">5 Bedrooms</span>
+                                        </li>
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="man-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">6 Restroom</span>
+                                        </li>
+                                    </ul>
+                                    
+                                    <!-- Property Price and Actions -->
+                                    <div class="card-meta">
+                                        <div>
+                                            <span class="meta-title">Price</span>
+                                            <span class="meta-text">₦750000.00</span>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <li class="property-item">
+                            <div class="property-card">
+                                <!-- Property Image -->
+                                <figure class="card-banner img-holder" style="--width: 850; --height: 700;">
+                                    <img src="/media/main_photos/property-4.jpg" width="850px" height="700" loading="lazy" alt="God&#x27;s Grace Hostel" class="img-cover">
+                                </figure>
+                                
+                                <div class="card-actions">
+                                    <!-- Buy Now Button -->
+                                    <form method="POST" action="/buy-property/2/">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="yGbVRyyDnM03OxtLfDcNFsCXyDghGEYWWRQWxiswc3ZN72wOcS1ZLHy3nR97VETE">
+                                        
+                                            <button class="buy-now-btn" type="submit"><ion-icon name="cart-outline"></ion-icon></button>
+                                        
+                                    </form>
+                    
+                                    <!-- Add to Favourite Button -->
+                                    <button class="card-action-btn" aria-label="add to favourite">
+                                        <ion-icon name="heart-outline"></ion-icon>
+                                    </button>
+                                </div>
+                                
+                                <!-- Card Content -->
+                                <div class="card-content">
+                                    <!-- Property Title -->
+                                    <h3 class="h3">
+                                        <a href="#" class="card-title">God&#x27;s Grace Hostel</a>
+                                    </h3>
+                                    
+                                    <!-- Property Details -->
+                                    <ul class="card-list">
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="bed-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">1 Bedrooms</span>
+                                        </li>
+                                        <li class="card-item">
+                                            <div class="item-icon">
+                                                <ion-icon name="man-outline"></ion-icon>
+                                            </div>
+                                            <span class="item-text">1 Restroom</span>
+                                        </li>
+                                    </ul>
+                                    
+                                    <!-- Property Price and Actions -->
+                                    <div class="card-meta">
+                                        <div>
+                                            <span class="meta-title">Price</span>
+                                            <span class="meta-text">₦120000.00</span>
+                                        </div>
+                                        
+                                        <div>
+                                            <a href="/initiate_chat/joshua4ability@gmail.com/" class="btn" style="font-size: 23px; padding: .5rem; border-radius: 5px;">
+                                                <ion-icon name="chatbubble-ellipses-outline" ></ion-icon> <!-- Chat icon here -->
+                                            </a>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        
+                    </ul>
+                    
+                </div>
+            </section>
+            
+            <!--=========== TESTIMONY ==========-->
+            <section class="section wrapper wrapper2 top">
+                <div class="container">
+                    <div class="text">
+                        <div class="heading">
+                            <h2>People Said</h2>
+                        </div>
+
+                        <div class="para">
+                            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Consequatur fuga porro veniam qui pariatur officia quas! Adipisci quos, optio deserunt rem quis maiores voluptate quidem ipsa eum placeat nisi id?</p>
+                            <div class="box flex">
+                                <div class="img">
+                                    <img src="/static/images/testimonial1.jpg" alt="">
+                                </div> <br>
+                                <div class="name">
+                                    <h5>RAUL SANJIR</h5>
+                                    <h5>IDAHD</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!--========= CONTACT =========-->
+            <section class="section contact" id="contact" aria-label="contact">
+                <div class="container">
+                    <h2 class="h2 section-title">Have a Question ? Get in touch</h2>
+
+                    <p class="section-text">
+                        A great platform to buy, sell, and rent your properties without any agent or comissions
+                    </p>
+                    <button class="btn btn-primary">
+                        <ion-icon name="call-outline"></ion-icon>
+                        <span class="span"><a href="mailto:codemyhobby9@gmail.com">Contact us</a></span>
+                    </button>
+                </div>
+            </section>
+
+            <!--======= FOOTER ========-->
+            <footer class="footer">
+                <div class="footer-top">
+                    <div class="container">
+                        <div class="footer-brand">
+                            <a href="#" class="logo">
+                                <ion-icon name="home-outline"></ion-icon> Realestate
+                            </a>
+                            <p class="footer-text">
+                                A great platform to buy, sell and rent your properties without any agent or comissions
+                            </p>
+                        </div>
+
+                        <ul class="footer-list">
+                            <li>
+                                <p class="footer-list-title">Company</p>
+                            </li>
+                            <li>
+                                <a href="#about" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">About us</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#services" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">Services</span>
+                                 </a>
+                            </li>
+                            <li>
+                                <a href="#properties" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">Pricing</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#contact" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">Contact us</span>
+                                </a>
+                            </li>
+
+                            <li>
+                                <a href="#" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">Login</span>
+                                </a>
+                            </li>
+                        </ul>
+
+                        <ul class="footer-list">
+                            <li>
+                                <p class="footer-list-title">More Links</p>
+                            </li>
+                            <li>
+                                <a href="#properties" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">Listing</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#contact" class="footer-link">
+                                    <ion-icon name="chevron-forward"></ion-icon>
+                                    <span class="span">Contact</span>
+                                </a>
+                            </li>
+                        </ul>
+
+                        <ul class="footer-list">
+                            <li>
+                                <p class="footer-list-title">Contact Details</p>
+                            </li>
+
+                            <li class="footer-item">
+                                <ion-icon name="location-outline"></ion-icon>
+                                <address class="address">
+                                    Ring Road <br>
+                                    Benin City, <br>
+                                    Nigeria
+                                    <a href="#" class="address-link">View on Google Maps</a>
+                                </address>
+                            </li>
+
+                            <li class="footer-item">
+                                <ion-icon name="mail-outline"></ion-icon>
+                                <a href="mailto: abrmservices@gmail.com" class="footer-link">abrmservices@gmail.com</a>
+                            </li>
+
+                            <li class="footer-item">
+                                <ion-icon name="call-outline"></ion-icon>
+                                <a href="tel: +2348024342548" class="footer-link">+2348024342548</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <div class="container">
+                        <p class="copyright">
+                            &copy; 2024 Realestate. All rights reserved by <a href="#" class="copyright-link">ABRM_SERVICES</a>
+                        </p>
+
+                        <ul class="social-list">
+                            <li>
+                                <a href="#" class="social-link">
+                                    <ion-icon name="logo-facebook"></ion-icon>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" class="social-link">
+                                    <ion-icon name="logo-instagram"></ion-icon>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" class="social-link">
+                                    <ion-icon name="logo-twitter"></ion-icon>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" class="social-link">
+                                    <ion-icon name="logo-linkedin"></ion-icon>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </footer>
+
+            <!--=========== BACK-TO-TOP ==========-->
+            <a href="#top" class="back-top-btn" aria-label="back to top" data-back-top-btn>
+                <ion-icon name="arrow-up" aria-hidden="true"></ion-icon>
+            </a>
+        </article>
+   </main>
+
+  <!--========= custom js link =========-->
+  <script src="/static/js/main.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=&libraries=places&callback=initMap"></script>
+
+
+  <!--=========== ionicon link ==========-->
+  <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+</html> 
